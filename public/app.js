@@ -216,7 +216,7 @@
 
       state.selectedIndex += 1;
       renderStep();
-    }, 2000);
+    }, 1000);
 
     updateNavigationButtons(state.analysis.moves.length);
   }
