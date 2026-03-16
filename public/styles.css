@@ -71,19 +71,19 @@ body {
   max-width: calc(var(--board-cluster-size) + (var(--panel-pad) * 2) + 2px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
   align-items: center;
 }
 
 .board-player {
   width: var(--board-cluster-size);
   max-width: 100%;
-  padding: 6px 10px;
+  padding: 4px 10px;
   border: 1px solid #4b5563;
   border-radius: 8px;
   background: #111827;
   color: #e5e7eb;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   font-weight: 600;
   text-align: left;
   white-space: nowrap;
@@ -102,15 +102,15 @@ body {
 
 .flip-board-btn {
   width: auto;
-  min-width: 44px;
-  height: 40px;
-  padding: 0 10px;
+  min-width: 34px;
+  height: 30px;
+  padding: 0 8px;
   border-radius: 8px;
   border: 1px solid #4b5563;
   background: linear-gradient(180deg, #334155 0%, #1f2937 100%);
   color: #e5e7eb;
   font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 0.9rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -235,7 +235,7 @@ button {
 
 .controls .nav-btn {
   width: 100%;
-  height: 56px;
+  height: 52px;
   border-radius: 12px;
   border: 1px solid #3f3f46;
   background: linear-gradient(180deg, #3f3f46 0%, #27272a 100%);
