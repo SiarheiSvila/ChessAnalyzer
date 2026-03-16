@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 
+import type { RawAnalysisResult } from '../../analysis/dto/AnalysisResult';
 import type { AnalysisJobManager } from '../../jobs/AnalysisJobManager';
 import { AppError } from '../../shared/errors/AppError';
 import type { AnalysisResultStore } from '../../storage/AnalysisResultStore';
@@ -24,6 +25,12 @@ interface AdminGameListItem {
   moves: number;
   date: string;
   sortDate: string;
+}
+
+interface AnalysisViewerPreference {
+  playerName: string;
+  playerColor: 'white' | 'black';
+  boardFlipped: boolean;
 }
 
 function asValidDepth(input: unknown): number | undefined {
@@ -85,6 +92,38 @@ function toOutcome(result: string | undefined, myColor: 'white' | 'black'): 'Win
   }
 
   return 'Unknown';
+}
+
+function resolveViewerPreference(result: RawAnalysisResult, configuredPlayer: string): AnalysisViewerPreference | undefined {
+  const effectivePlayer = configuredPlayer.trim();
+  if (effectivePlayer.length === 0) {
+    return undefined;
+  }
+
+  const headers = result.game.headers;
+  const whiteName = normalizeName(headers.White ?? result.game.white);
+  const blackName = normalizeName(headers.Black ?? result.game.black);
+  const normalizedPlayer = effectivePlayer.toLowerCase();
+  const matchesWhite = whiteName.toLowerCase() === normalizedPlayer;
+  const matchesBlack = blackName.toLowerCase() === normalizedPlayer;
+
+  if (matchesBlack && !matchesWhite) {
+    return {
+      playerName: blackName,
+      playerColor: 'black',
+      boardFlipped: true,
+    };
+  }
+
+  if (matchesWhite) {
+    return {
+      playerName: whiteName,
+      playerColor: 'white',
+      boardFlipped: false,
+    };
+  }
+
+  return undefined;
 }
 
 export class AnalyzeController {
@@ -211,10 +250,12 @@ export class AnalyzeController {
           return;
         }
 
+        const viewer = resolveViewerPreference(persisted.result, (process.env.ADMIN_PLAYER_NAME ?? '').trim());
         response.status(200).json({
           jobId: persisted.jobId,
           state: 'completed',
           result: persisted.result,
+          viewer,
         });
         return;
       } catch (error) {
@@ -252,6 +293,7 @@ export class AnalyzeController {
       jobId: record.jobId,
       state: record.state,
       result: record.result,
+      viewer: resolveViewerPreference(record.result, (process.env.ADMIN_PLAYER_NAME ?? '').trim()),
     });
   };
 
@@ -280,10 +322,12 @@ export class AnalyzeController {
         return;
       }
 
+      const viewer = resolveViewerPreference(persisted.result, (process.env.ADMIN_PLAYER_NAME ?? '').trim());
       response.status(200).json({
         jobId: persisted.jobId,
         state: 'completed',
         result: persisted.result,
+        viewer,
       });
     } catch (error) {
       const appError = error instanceof AppError ? error : new AppError('Failed to read persisted analysis.', 'STORAGE_ERROR', error);

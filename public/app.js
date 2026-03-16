@@ -6,6 +6,7 @@
     selectedIndex: -1,
     viewerColor: null,
     playTimerId: null,
+    boardFlipped: false,
   };
 
   const elements = {
@@ -19,6 +20,7 @@
     evalChart: document.getElementById('evalChart'),
     evalDisplay: document.getElementById('evalDisplay'),
     evalBarFill: document.getElementById('evalBarFill'),
+    flipBoardBtn: document.getElementById('flipBoardBtn'),
     boardPlayerTop: document.getElementById('boardPlayerTop'),
     boardPlayerBottom: document.getElementById('boardPlayerBottom'),
     firstBtn: document.getElementById('firstBtn'),
@@ -55,6 +57,12 @@
     }
 
     const playerInfo = resolvePlayerInfo(result);
+    if (state.boardFlipped) {
+      elements.boardPlayerTop.textContent = `${playerInfo.white} (${playerInfo.whiteElo})`;
+      elements.boardPlayerBottom.textContent = `${playerInfo.black} (${playerInfo.blackElo})`;
+      return;
+    }
+
     elements.boardPlayerTop.textContent = `${playerInfo.black} (${playerInfo.blackElo})`;
     elements.boardPlayerBottom.textContent = `${playerInfo.white} (${playerInfo.whiteElo})`;
   }
@@ -86,10 +94,11 @@
     return parts.join(' ').trim();
   }
 
-  function applyAnalysisResult(result) {
+  function applyAnalysisResult(result, viewer) {
     state.analysis = result;
     state.viewerColor = EVAL_PERSPECTIVE;
     state.selectedIndex = result.moves.length > 0 ? 0 : -1;
+    state.boardFlipped = viewer?.boardFlipped === true;
     renderBoardPlayers(result);
 
     if (typeof result.pgn === 'string' && result.pgn.trim().length > 0) {
@@ -184,41 +193,46 @@
 
   function renderBoard(fen, highlightSquare, highlightFromSquare, highlightClass, bestMoveSquares) {
     const squares = window.UiHelpers.boardFromFen(fen);
-    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const files = state.boardFlipped
+      ? ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
+      : ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     const highlightIndex = boardIndexFromSquare(highlightSquare);
     const highlightFromIndex = boardIndexFromSquare(highlightFromSquare);
     const bestFromIndex = boardIndexFromSquare(bestMoveSquares?.fromSquare ?? null);
     const bestToIndex = boardIndexFromSquare(bestMoveSquares?.toSquare ?? null);
     elements.board.innerHTML = '';
 
-    for (let index = 0; index < squares.length; index += 1) {
-      const row = Math.floor(index / 8);
-      const col = index % 8;
+    for (let displayIndex = 0; displayIndex < squares.length; displayIndex += 1) {
+      const row = Math.floor(displayIndex / 8);
+      const col = displayIndex % 8;
+      const sourceRow = state.boardFlipped ? 7 - row : row;
+      const sourceCol = state.boardFlipped ? 7 - col : col;
+      const sourceIndex = sourceRow * 8 + sourceCol;
       const square = document.createElement('div');
       square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
 
-      if (highlightIndex === index && highlightClass) {
+      if (highlightIndex === sourceIndex && highlightClass) {
         square.classList.add(highlightClass);
       }
 
-      if (highlightFromIndex === index && highlightClass) {
+      if (highlightFromIndex === sourceIndex && highlightClass) {
         square.classList.add(highlightClass);
       }
 
-      if (bestFromIndex === index) {
+      if (bestFromIndex === sourceIndex) {
         square.classList.add('move-best-from');
       }
 
-      if (bestToIndex === index) {
+      if (bestToIndex === sourceIndex) {
         square.classList.add('move-best-to');
       }
 
-      square.textContent = squares[index] || '';
+      square.textContent = squares[sourceIndex] || '';
 
       if (col === 0) {
         const rankLabel = document.createElement('span');
         rankLabel.className = 'coord-label rank-label';
-        rankLabel.textContent = String(8 - row);
+        rankLabel.textContent = String(state.boardFlipped ? row + 1 : 8 - row);
         square.appendChild(rankLabel);
       }
 
@@ -266,11 +280,24 @@
     const maxAbs = 1000;
     const rawEval = window.UiHelpers.evalToNumberForPerspective(move.evalAfter, state.viewerColor, move.color);
     const bounded = Math.max(-maxAbs, Math.min(maxAbs, rawEval));
-    
-    // Positive = white advantage (bar fills), negative = black advantage (bar empties)
-    const percentage = ((maxAbs + bounded) / (2 * maxAbs)) * 100;
-    
+
+    // Positive = white advantage in normal orientation, inverted when board is flipped.
+    const normalPercentage = ((maxAbs + bounded) / (2 * maxAbs)) * 100;
+    const percentage = state.boardFlipped ? 100 - normalPercentage : normalPercentage;
+
     elements.evalBarFill.style.setProperty('--eval-percent', `${percentage}%`);
+  }
+
+  function toggleBoardOrientation() {
+    state.boardFlipped = !state.boardFlipped;
+
+    if (state.analysis) {
+      renderBoardPlayers(state.analysis);
+    }
+
+    if (state.analysis && state.selectedIndex >= 0) {
+      renderStep();
+    }
   }
 
   function qualityClassFromLabel(label) {
@@ -500,7 +527,10 @@
 
     if (persistedResponse.ok) {
       const payload = await persistedResponse.json();
-      return payload.result;
+      return {
+        result: payload.result,
+        viewer: payload.viewer ?? null,
+      };
     }
 
     if (persistedResponse.status !== 404) {
@@ -519,7 +549,10 @@
       throw new Error(payload?.error?.message ?? 'Analysis was not found');
     }
 
-    return payload.result;
+    return {
+      result: payload.result,
+      viewer: payload.viewer ?? null,
+    };
   }
 
   async function loadAnalysisFromPath(jobId) {
@@ -528,8 +561,8 @@
     setProgress(0);
 
     try {
-      const result = await loadPersistedAnalysis(jobId);
-      applyAnalysisResult(result);
+      const loadedAnalysis = await loadPersistedAnalysis(jobId);
+      applyAnalysisResult(loadedAnalysis.result, loadedAnalysis.viewer);
       setStatus(`Analysis loaded: ${jobId}`);
     } catch (error) {
       setStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -627,6 +660,10 @@
 
   elements.playBtn.addEventListener('click', () => {
     playMoves();
+  });
+
+  elements.flipBoardBtn?.addEventListener('click', () => {
+    toggleBoardOrientation();
   });
 
   document.addEventListener('keydown', handleKeyboardNavigation);
