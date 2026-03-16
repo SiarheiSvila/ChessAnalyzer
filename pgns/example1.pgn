@@ -1,0 +1,36 @@
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2026.03.12"]
+[Round "-"]
+[White "sergei1506"]
+[Black "Zuvarna"]
+[Result "1-0"]
+[CurrentPosition "4k3/R7/5B2/8/3P1pBp/7P/5PP1/K7 b - - 0 47"]
+[Timezone "UTC"]
+[ECO "B12"]
+[ECOUrl "https://www.chess.com/openings/Caro-Kann-Defense-2.d4"]
+[UTCDate "2026.03.12"]
+[UTCTime "20:37:01"]
+[WhiteElo "732"]
+[BlackElo "706"]
+[TimeControl "600"]
+[Termination "sergei1506 won by resignation"]
+[StartTime "20:37:01"]
+[EndDate "2026.03.12"]
+[EndTime "20:52:58"]
+[Link "https://www.chess.com/analysis/game/live/165864518742/analysis"]
+[WhiteUrl "https://images.chesscomfiles.com/uploads/v1/user/100621326.5f824405.50x50o.9e20493afcc2.jpeg"]
+[WhiteCountry "112"]
+[WhiteTitle ""]
+[BlackUrl "https://images.chesscomfiles.com/uploads/v1/user/30715784.62dab66a.50x50o.1902713f9af2.jpeg"]
+[BlackCountry "132"]
+[BlackTitle ""]
+
+1. e4 c6 2. d4 a6 3. Nc3 d5 4. exd5 cxd5 5. Nf3 Bg4 6. h3 Bxf3 7. Qxf3 e6 8. Bf4
+Nc6 9. O-O-O h6 10. Na4 b6 11. Bd3 Nb4 12. Be2 Nxa2+ 13. Kb1 Nb4 14. Qb3 Nf6 15.
+c3 b5 16. cxb4 bxa4 17. Qxa4+ Nd7 18. b5 Nb6 19. bxa6+ Nxa4 20. Bb5+ Ke7 21.
+Bxa4 Rxa6 22. Bb5 Rb6 23. Bd3 g5 24. Be5 f6 25. Bh2 Kf7 26. Rc1 Ba3 27. Rc2 Qd7
+28. Rhc1 Rhb8 29. Rc7 Rxb2+ 30. Ka1 Rb1+ 31. Bxb1 Bb2+ 32. Ka2 Ra8+ 33. Kxb2
+Rb8+ 34. Ka1 Ra8+ 35. Ba2 Ke7 36. Rxd7+ Kxd7 37. Rc7+ Kd8 38. Rh7 e5 39. Rh8+
+Kc7 40. Rxa8 f5 41. Bxe5+ Kd7 42. Bxd5 f4 43. Ra7+ Ke8 44. Bg7 h5 45. Bf3 h4 46.
+Bf6 g4 47. Bxg4 1-0

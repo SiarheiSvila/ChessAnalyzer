@@ -1,0 +1,173 @@
+:root {
+  color-scheme: light dark;
+  font-family: Inter, Segoe UI, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 1.2%;
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 32fr 50fr 18fr;
+  grid-template-areas:
+    "input board moves"
+    "details chart chart";
+  gap: 1%;
+}
+
+.panel {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.input-panel {
+  grid-area: input;
+}
+
+.board-panel {
+  grid-area: board;
+}
+
+.moves-panel {
+  grid-area: moves;
+  min-width: 0;
+}
+
+.details-panel {
+  grid-area: details;
+}
+
+.chart-panel {
+  grid-area: chart;
+}
+
+textarea,
+input,
+button {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 60px 80px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.status {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.progress-wrap {
+  margin-top: 8px;
+  width: 100%;
+  height: 8px;
+  background: #111827;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  width: 0%;
+  height: 100%;
+  background: #22c55e;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 100px 1fr 100px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  font-size: clamp(1.6rem, 4.4vw, 3.4rem);
+  border: 1px solid #4b5563;
+}
+
+.square {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1em;
+}
+
+.light {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.dark {
+  background: #9ca3af;
+  color: #111827;
+}
+
+.eval-display {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.move-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.move-item {
+  padding: 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.move-item:hover {
+  background: #374151;
+}
+
+.move-item.active {
+  background: #2563eb;
+}
+
+#evalChart {
+  width: 100%;
+  height: 180px;
+  background: #111827;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+}

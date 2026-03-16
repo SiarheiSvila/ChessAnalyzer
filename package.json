@@ -1,0 +1,30 @@
+{
+  "name": "chessnpm-analyzer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Phase 1 Stockfish UCI bridge for chess analyzer",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "phase1:smoke": "tsx src/scripts/phase1-smoke.ts",
+    "phase2:smoke": "tsx src/scripts/phase2-smoke.ts",
+    "phase3:smoke": "tsx src/scripts/phase3-smoke.ts",
+    "dev": "tsx src/app/server.ts",
+    "start": "tsx src/app/server.ts",
+    "phase4:server": "tsx src/app/server.ts",
+    "test": "tsx --test tests/**/*.test.ts",
+    "test:api": "tsx --test tests/integration/**/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.13.14",
+    "@types/supertest": "^6.0.3",
+    "chess.js": "^1.1.0",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "supertest": "^7.1.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
