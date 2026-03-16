@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { AnalysisJobManager } from '../../src/jobs/AnalysisJobManager';
+import type { AnalysisResultStore, PersistedAnalysisRecord } from '../../src/storage/AnalysisResultStore';
 
 async function waitForState(
   manager: AnalysisJobManager,
@@ -116,5 +117,69 @@ describe('AnalysisJobManager', () => {
     await waitForState(manager, second.jobId, ['completed']);
 
     assert.equal(maxRunning, 1);
+  });
+
+  it('persists completed analysis to configured store', async () => {
+    const savedRecords: PersistedAnalysisRecord[] = [];
+    const resultStore: AnalysisResultStore = {
+      save: async (record) => {
+        savedRecords.push(record);
+      },
+      getByJobId: async () => undefined,
+    };
+
+    const manager = new AnalysisJobManager(
+      async (_request, _onProgress) => ({
+        game: { headers: {} },
+        settings: {
+          depth: 8,
+          deepDepth: 14,
+          deepReanalyzedPlies: 0,
+          cache: { hits: 0, misses: 0, size: 0 },
+        },
+        moves: [],
+        summary: {
+          accuracyWhite: 100,
+          accuracyBlack: 100,
+          counts: {
+            white: { best: 0, excellent: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 },
+            black: { best: 0, excellent: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 },
+          },
+          criticalMoments: 0,
+        },
+      }),
+      undefined,
+      { analysisResultStore: resultStore },
+    );
+
+    const { jobId } = manager.createJob({ pgn: '1. e4 e5' });
+    await waitForState(manager, jobId, ['completed']);
+
+    assert.equal(savedRecords.length, 1);
+    assert.equal(savedRecords[0]?.jobId, jobId);
+    assert.equal(savedRecords[0]?.analysisVersion, 1);
+  });
+
+  it('does not persist failed analysis to configured store', async () => {
+    const savedRecords: PersistedAnalysisRecord[] = [];
+    const resultStore: AnalysisResultStore = {
+      save: async (record) => {
+        savedRecords.push(record);
+      },
+      getByJobId: async () => undefined,
+    };
+
+    const manager = new AnalysisJobManager(
+      async () => {
+        throw new Error('engine failed');
+      },
+      undefined,
+      { analysisResultStore: resultStore },
+    );
+
+    const { jobId } = manager.createJob({ pgn: '1. e4 e5' });
+    await waitForState(manager, jobId, ['failed']);
+
+    assert.equal(savedRecords.length, 0);
   });
 });

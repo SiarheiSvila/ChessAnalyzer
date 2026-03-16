@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import os from 'node:os';
 
 import type { RawAnalysisResult } from '../analysis/dto/AnalysisResult';
+import { AppError } from '../shared/errors/AppError';
+import type { AnalysisResultStore } from '../storage/AnalysisResultStore';
 import type { AnalysisJobRecord } from './JobStore';
 import { JobStore } from './JobStore';
 
@@ -20,14 +22,16 @@ export class AnalysisJobManager {
   private readonly queuedJobs: Array<{ jobId: string; request: AnalysisRequest }> = [];
   private activeJobs = 0;
   private readonly maxConcurrentJobs: number;
+  private readonly analysisResultStore?: AnalysisResultStore;
 
   public constructor(
     private readonly runner: AnalysisRunner,
     store?: JobStore,
-    options?: { maxConcurrentJobs?: number },
+    options?: { maxConcurrentJobs?: number; analysisResultStore?: AnalysisResultStore },
   ) {
     this.store = store ?? new JobStore();
     this.maxConcurrentJobs = Math.max(1, options?.maxConcurrentJobs ?? Math.max(1, Math.floor(os.availableParallelism() / 2)));
+    this.analysisResultStore = options?.analysisResultStore;
   }
 
   public createJob(request: AnalysisRequest): { jobId: string } {
@@ -55,9 +59,14 @@ export class AnalysisJobManager {
   }
 
   public async runSynchronous(request: AnalysisRequest): Promise<RawAnalysisResult> {
-    return this.runner(request, () => {
+    const result = await this.runner(request, () => {
       return;
     });
+
+    return {
+      ...result,
+      pgn: request.pgn,
+    };
   }
 
   public getStatus(jobId: string): AnalysisJobRecord | undefined {
@@ -82,7 +91,7 @@ export class AnalysisJobManager {
     });
 
     try {
-      const result = await this.runner(request, ({ currentPly, totalPlies, percent }) => {
+      const rawResult = await this.runner(request, ({ currentPly, totalPlies, percent }) => {
         console.debug('[AnalysisJobManager] Job progress', {
           jobId,
           currentPly,
@@ -97,11 +106,31 @@ export class AnalysisJobManager {
         });
       });
 
+      const result: RawAnalysisResult = {
+        ...rawResult,
+        pgn: request.pgn,
+      };
+
       this.store.update(jobId, {
         state: 'completed',
         progress: 100,
         result,
       });
+
+      if (this.analysisResultStore) {
+        const completedRecord = this.store.get(jobId);
+        if (!completedRecord) {
+          throw new AppError('Completed job was not found in memory store.', 'JOB_STATE_ERROR', { jobId });
+        }
+
+        await this.analysisResultStore.save({
+          jobId,
+          createdAt: completedRecord.createdAt,
+          completedAt: completedRecord.updatedAt,
+          analysisVersion: 1,
+          result,
+        });
+      }
 
       console.info('[AnalysisJobManager] Job completed', {
         jobId,
@@ -118,8 +147,9 @@ export class AnalysisJobManager {
 
       this.store.update(jobId, {
         state: 'failed',
+        result: undefined,
         error: {
-          code: 'ANALYSIS_FAILED',
+          code: error instanceof AppError ? error.code : 'ANALYSIS_FAILED',
           message,
         },
       });

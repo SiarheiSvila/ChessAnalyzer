@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 
 import type { AnalysisJobManager } from '../../jobs/AnalysisJobManager';
+import { AppError } from '../../shared/errors/AppError';
+import type { AnalysisResultStore } from '../../storage/AnalysisResultStore';
 
 interface AnalyzeRequestBody {
   pgn?: unknown;
@@ -23,7 +25,10 @@ function asValidDepth(input: unknown): number | undefined {
 }
 
 export class AnalyzeController {
-  public constructor(private readonly jobManager: AnalysisJobManager) {}
+  public constructor(
+    private readonly jobManager: AnalysisJobManager,
+    private readonly analysisResultStore?: AnalysisResultStore,
+  ) {}
 
   public createAnalysis = async (request: Request, response: Response): Promise<void> => {
     const body = request.body as AnalyzeRequestBody;
@@ -115,18 +120,51 @@ export class AnalyzeController {
     });
   };
 
-  public getResult = (request: Request, response: Response): void => {
+  public getResult = async (request: Request, response: Response): Promise<void> => {
     const jobId = Array.isArray(request.params.jobId) ? request.params.jobId[0] : request.params.jobId;
     console.debug('[AnalyzeController] Result requested', { jobId });
     const record = this.jobManager.getResult(jobId);
+
     if (!record) {
-      response.status(404).json({
-        error: {
-          code: 'JOB_NOT_FOUND',
-          message: 'Analysis job was not found.',
-        },
-      });
-      return;
+      if (!this.analysisResultStore) {
+        response.status(404).json({
+          error: {
+            code: 'JOB_NOT_FOUND',
+            message: 'Analysis job was not found.',
+          },
+        });
+        return;
+      }
+
+      try {
+        const persisted = await this.analysisResultStore.getByJobId(jobId);
+        if (!persisted) {
+          response.status(404).json({
+            error: {
+              code: 'JOB_NOT_FOUND',
+              message: 'Analysis job was not found.',
+            },
+          });
+          return;
+        }
+
+        response.status(200).json({
+          jobId: persisted.jobId,
+          state: 'completed',
+          result: persisted.result,
+        });
+        return;
+      } catch (error) {
+        const appError = error instanceof AppError ? error : new AppError('Failed to read persisted analysis.', 'STORAGE_ERROR', error);
+
+        response.status(500).json({
+          error: {
+            code: appError.code,
+            message: appError.message,
+          },
+        });
+        return;
+      }
     }
 
     if (record.state === 'failed') {
@@ -152,5 +190,46 @@ export class AnalyzeController {
       state: record.state,
       result: record.result,
     });
+  };
+
+  public getStoredAnalysis = async (request: Request, response: Response): Promise<void> => {
+    const jobId = Array.isArray(request.params.jobId) ? request.params.jobId[0] : request.params.jobId;
+
+    if (!this.analysisResultStore) {
+      response.status(404).json({
+        error: {
+          code: 'JOB_NOT_FOUND',
+          message: 'Analysis job was not found.',
+        },
+      });
+      return;
+    }
+
+    try {
+      const persisted = await this.analysisResultStore.getByJobId(jobId);
+      if (!persisted) {
+        response.status(404).json({
+          error: {
+            code: 'JOB_NOT_FOUND',
+            message: 'Analysis job was not found.',
+          },
+        });
+        return;
+      }
+
+      response.status(200).json({
+        jobId: persisted.jobId,
+        state: 'completed',
+        result: persisted.result,
+      });
+    } catch (error) {
+      const appError = error instanceof AppError ? error : new AppError('Failed to read persisted analysis.', 'STORAGE_ERROR', error);
+      response.status(500).json({
+        error: {
+          code: appError.code,
+          message: appError.message,
+        },
+      });
+    }
   };
 }

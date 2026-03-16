@@ -1,13 +1,16 @@
 import 'dotenv/config';
+import path from 'node:path';
 
 import { GameAnalyzer } from '../analysis/GameAnalyzer';
 import { PositionEvaluator } from '../analysis/PositionEvaluator';
 import { StockfishService } from '../engine/StockfishService';
 import { AnalysisJobManager } from '../jobs/AnalysisJobManager';
+import { LocalAnalysisResultStore } from '../storage/LocalAnalysisResultStore';
 import { createApp } from './createApp';
 
 const port = Number.parseInt(process.env.PORT ?? '3000', 10);
 const enginePath = process.env.STOCKFISH_PATH;
+const analysisStorageDir = (process.env.ANALYSIS_STORAGE_DIR ?? '').trim() || path.join(process.cwd(), 'storage', 'local', 'analyses');
 
 if (!enginePath) {
   throw new Error('Missing required env variable STOCKFISH_PATH');
@@ -22,6 +25,7 @@ const stockfishService = new StockfishService({
 });
 
 const analyzer = new GameAnalyzer(new PositionEvaluator(stockfishService));
+const analysisStore = new LocalAnalysisResultStore(analysisStorageDir);
 
 const jobManager = new AnalysisJobManager(async (request, onProgress) => {
   await stockfishService.initialize();
@@ -29,12 +33,13 @@ const jobManager = new AnalysisJobManager(async (request, onProgress) => {
     depth: request.depth,
     onProgress,
   });
-});
+}, undefined, { analysisResultStore: analysisStore });
 
-const app = createApp(jobManager);
+const app = createApp(jobManager, analysisStore);
 
 const server = app.listen(port, () => {
   console.log(`Chess analyzer API running on port ${port}`);
+  console.log(`Analysis storage directory: ${analysisStorageDir}`);
 });
 
 async function shutdown(): Promise<void> {

@@ -32,6 +32,57 @@
     detailEvalAfter: document.getElementById('detailEvalAfter'),
   };
 
+  function getJobIdFromPath() {
+    const match = window.location.pathname.match(/^\/analysis\/([a-zA-Z0-9-]+)$/);
+    return match ? match[1] : null;
+  }
+
+  function buildProcessedPgnFromMoves(moves) {
+    if (!Array.isArray(moves) || moves.length === 0) {
+      return '';
+    }
+
+    const parts = [];
+    for (let index = 0; index < moves.length; index += 1) {
+      const move = moves[index];
+      if (!move || typeof move.san !== 'string' || move.san.trim().length === 0) {
+        continue;
+      }
+
+      if (index % 2 === 0) {
+        parts.push(`${Math.floor(index / 2) + 1}. ${move.san.trim()}`);
+      } else {
+        parts.push(move.san.trim());
+      }
+    }
+
+    return parts.join(' ').trim();
+  }
+
+  function applyAnalysisResult(result) {
+    state.analysis = result;
+    state.viewerColor = EVAL_PERSPECTIVE;
+    state.selectedIndex = result.moves.length > 0 ? 0 : -1;
+
+    if (typeof result.pgn === 'string' && result.pgn.trim().length > 0) {
+      elements.pgnInput.value = result.pgn;
+    } else {
+      const processedPgn = buildProcessedPgnFromMoves(result.moves);
+      if (processedPgn) {
+        elements.pgnInput.value = processedPgn;
+      }
+    }
+
+    if (state.selectedIndex >= 0) {
+      setProgress(100);
+      renderStep();
+      return;
+    }
+
+    setStatus('Analysis completed with no moves.');
+    updateNavigationButtons(0);
+  }
+
   function setStatus(text) {
     elements.statusText.textContent = text;
   }
@@ -40,9 +91,76 @@
     elements.progressBar.style.width = `${percent}%`;
   }
 
-  function renderBoard(fen) {
+  function landingSquareFromUci(uciMove) {
+    if (typeof uciMove !== 'string' || uciMove.length < 4) {
+      return null;
+    }
+
+    const toSquare = uciMove.slice(2, 4).toLowerCase();
+    return /^[a-h][1-8]$/.test(toSquare) ? toSquare : null;
+  }
+
+  function boardIndexFromSquare(square) {
+    if (!square || square.length !== 2) {
+      return -1;
+    }
+
+    const file = square.charCodeAt(0) - 97;
+    const rank = Number.parseInt(square[1], 10);
+    if (file < 0 || file > 7 || rank < 1 || rank > 8) {
+      return -1;
+    }
+
+    const row = 8 - rank;
+    return row * 8 + file;
+  }
+
+  function squaresFromUci(uciMove) {
+    if (typeof uciMove !== 'string' || uciMove.length < 4) {
+      return null;
+    }
+
+    const fromSquare = uciMove.slice(0, 2).toLowerCase();
+    const toSquare = uciMove.slice(2, 4).toLowerCase();
+    if (!/^[a-h][1-8]$/.test(fromSquare) || !/^[a-h][1-8]$/.test(toSquare)) {
+      return null;
+    }
+
+    return { fromSquare, toSquare };
+  }
+
+  function boardHighlightClassFromLabel(label) {
+    if (!label) {
+      return '';
+    }
+
+    const normalized = label.trim().toLowerCase();
+    if (normalized === 'blunder') {
+      return 'move-land-blunder';
+    }
+
+    if (normalized === 'mistake') {
+      return 'move-land-mistake';
+    }
+
+    if (normalized === 'inaccuracy') {
+      return 'move-land-inaccuracy';
+    }
+
+    if (normalized === 'excellent' || normalized === 'exccelent') {
+      return 'move-land-excellent';
+    }
+
+    return '';
+  }
+
+  function renderBoard(fen, highlightSquare, highlightFromSquare, highlightClass, bestMoveSquares) {
     const squares = window.UiHelpers.boardFromFen(fen);
     const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const highlightIndex = boardIndexFromSquare(highlightSquare);
+    const highlightFromIndex = boardIndexFromSquare(highlightFromSquare);
+    const bestFromIndex = boardIndexFromSquare(bestMoveSquares?.fromSquare ?? null);
+    const bestToIndex = boardIndexFromSquare(bestMoveSquares?.toSquare ?? null);
     elements.board.innerHTML = '';
 
     for (let index = 0; index < squares.length; index += 1) {
@@ -50,6 +168,23 @@
       const col = index % 8;
       const square = document.createElement('div');
       square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+
+      if (highlightIndex === index && highlightClass) {
+        square.classList.add(highlightClass);
+      }
+
+      if (highlightFromIndex === index && highlightClass) {
+        square.classList.add(highlightClass);
+      }
+
+      if (bestFromIndex === index) {
+        square.classList.add('move-best-from');
+      }
+
+      if (bestToIndex === index) {
+        square.classList.add('move-best-to');
+      }
+
       square.textContent = squares[index] || '';
 
       if (col === 0) {
@@ -250,6 +385,13 @@
     const moves = state.analysis.moves;
     const move = moves[state.selectedIndex];
     const view = window.UiHelpers.stepView(move, state.selectedIndex, moves.length, state.viewerColor);
+    const playedMoveSquares = squaresFromUci(move.uciMove);
+    const landingSquare = playedMoveSquares?.toSquare ?? landingSquareFromUci(move.uciMove);
+    const landingClass = boardHighlightClassFromLabel(move.label);
+    const hintLabels = new Set(['inaccuracy', 'mistake', 'blunder']);
+    const shouldShowBestMoveHint = move.label && hintLabels.has(move.label.trim().toLowerCase());
+    const highlightFromSquare = shouldShowBestMoveHint ? playedMoveSquares?.fromSquare ?? null : null;
+    const bestMoveSquares = shouldShowBestMoveHint ? squaresFromUci(move.bestMove) : null;
 
     elements.evalDisplay.textContent = view.evalDisplay;
     elements.detailSan.textContent = `SAN: ${view.details.san}`;
@@ -259,7 +401,7 @@
     elements.detailEvalBefore.textContent = `Eval Before: ${view.details.evalBefore}`;
     elements.detailEvalAfter.textContent = `Eval After: ${view.details.evalAfter}`;
 
-    renderBoard(move.fenAfter);
+    renderBoard(move.fenAfter, landingSquare, highlightFromSquare, landingClass, bestMoveSquares);
     renderMoveList(moves, state.selectedIndex);
     renderChart(moves, state.selectedIndex);
     updateEvalBar(move);
@@ -278,12 +420,54 @@
       }
 
       if (status.state === 'completed') {
-        const resultResponse = await fetch(`/api/analyze/${jobId}/result`);
-        const payload = await resultResponse.json();
-        return payload.result;
+        return;
       }
 
       await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+  }
+
+  async function loadPersistedAnalysis(jobId) {
+    const persistedResponse = await fetch(`/api/analysis/${jobId}`);
+
+    if (persistedResponse.ok) {
+      const payload = await persistedResponse.json();
+      return payload.result;
+    }
+
+    if (persistedResponse.status !== 404) {
+      const payload = await persistedResponse.json().catch(() => ({}));
+      throw new Error(payload?.error?.message ?? 'Failed to load persisted analysis');
+    }
+
+    const resultResponse = await fetch(`/api/analyze/${jobId}/result`);
+    if (resultResponse.status === 202) {
+      await pollResult(jobId);
+      return loadPersistedAnalysis(jobId);
+    }
+
+    const payload = await resultResponse.json();
+    if (!resultResponse.ok || !payload.result) {
+      throw new Error(payload?.error?.message ?? 'Analysis was not found');
+    }
+
+    return payload.result;
+  }
+
+  async function loadAnalysisFromPath(jobId) {
+    elements.analyzeBtn.disabled = true;
+    setStatus(`Loading analysis ${jobId}...`);
+    setProgress(0);
+
+    try {
+      const result = await loadPersistedAnalysis(jobId);
+      applyAnalysisResult(result);
+      setStatus(`Analysis loaded: ${jobId}`);
+    } catch (error) {
+      setStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      updateNavigationButtons(0);
+    } finally {
+      elements.analyzeBtn.disabled = false;
     }
   }
 
@@ -319,20 +503,9 @@
       }
 
       const { jobId } = await response.json();
-      const result = await pollResult(jobId);
-
-      state.analysis = result;
-      state.viewerColor = EVAL_PERSPECTIVE;
-      state.selectedIndex = result.moves.length > 0 ? 0 : -1;
-
-      if (state.selectedIndex >= 0) {
-        setStatus('Analysis completed.');
-        setProgress(100);
-        renderStep();
-      } else {
-        setStatus('Analysis completed with no moves.');
-        updateNavigationButtons(0);
-      }
+      await pollResult(jobId);
+      setStatus('Analysis completed. Redirecting...');
+      window.location.assign(`/analysis/${jobId}`);
     } catch (error) {
       setStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
@@ -387,4 +560,9 @@
   elements.playBtn.addEventListener('click', () => {
     playMoves();
   });
+
+  const jobIdFromPath = getJobIdFromPath();
+  if (jobIdFromPath) {
+    void loadAnalysisFromPath(jobIdFromPath);
+  }
 })();

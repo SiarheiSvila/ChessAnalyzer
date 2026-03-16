@@ -229,6 +229,31 @@ button {
   align-items: center;
   justify-content: center;
   font-size: 1em;
+  transition: box-shadow 0.2s ease;
+}
+
+.square.move-land-blunder {
+  box-shadow: inset 0 0 0 3px #7a3535, inset 0 0 0 999px rgba(122, 53, 53, 0.28);
+}
+
+.square.move-land-mistake {
+  box-shadow: inset 0 0 0 3px #7f3d5c, inset 0 0 0 999px rgba(127, 61, 92, 0.24);
+}
+
+.square.move-land-inaccuracy {
+  box-shadow: inset 0 0 0 3px #95553a, inset 0 0 0 999px rgba(149, 85, 58, 0.24);
+}
+
+.square.move-land-excellent {
+  box-shadow: inset 0 0 0 3px #3f6293, inset 0 0 0 999px rgba(63, 98, 147, 0.24);
+}
+
+.square.move-best-from {
+  box-shadow: inset 0 0 0 3px #3a6f4d, inset 0 0 0 999px rgba(58, 111, 77, 0.18);
+}
+
+.square.move-best-to {
+  box-shadow: inset 0 0 0 3px #4d7c0f, inset 0 0 0 999px rgba(77, 124, 15, 0.28);
 }
 
 .coord-label {
@@ -346,39 +371,39 @@ button {
 }
 
 .move-item.move-quality-blunder .move-pill {
-  background: #7f1d1d;
-  border-color: #991b1b;
-  color: #fee2e2;
+  background: #5f2626;
+  border-color: #7a3535;
+  color: #f5dede;
 }
 
 .move-item.move-quality-mistake .move-pill {
-  background: #831843;
-  border-color: #9d174d;
-  color: #fce7f3;
+  background: #6a2b49;
+  border-color: #7f3d5c;
+  color: #f3e2ec;
 }
 
 .move-item.move-quality-inaccuracy .move-pill {
-  background: #9a3412;
-  border-color: #c2410c;
-  color: #ffedd5;
+  background: #7a442b;
+  border-color: #95553a;
+  color: #f5e6db;
 }
 
 .move-item.move-quality-excellent .move-pill {
-  background: #1e3a8a;
-  border-color: #1d4ed8;
-  color: #dbeafe;
+  background: #304d79;
+  border-color: #3f6293;
+  color: #dde8f5;
 }
 
 .move-item.move-quality-best .move-pill {
-  background: #14532d;
-  border-color: #166534;
-  color: #dcfce7;
+  background: #2e5a3e;
+  border-color: #3a6f4d;
+  color: #e0f0e6;
 }
 
 .move-item.move-quality-good .move-pill {
-  background: #365314;
-  border-color: #4d7c0f;
-  color: #ecfccb;
+  background: #4c5f2e;
+  border-color: #5e7440;
+  color: #edf3dd;
 }
 
 .move-item:not([class*='move-quality-']) .move-pill {

@@ -24,6 +24,7 @@ export interface AnalyzedMove extends RawMoveAnalysis {
 }
 
 export interface RawAnalysisResult {
+  pgn?: string;
   game: {
     event?: string;
     white?: string;

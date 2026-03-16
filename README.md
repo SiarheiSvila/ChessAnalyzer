@@ -63,6 +63,7 @@ Create or edit `.env` in project root:
 ```env
 STOCKFISH_PATH=/absolute/path/to/stockfish
 PORT=3000
+ANALYSIS_STORAGE_DIR=/absolute/path/to/analysis/storage
 ```
 
 Windows example:
@@ -70,6 +71,7 @@ Windows example:
 ```env
 STOCKFISH_PATH=C:\Users\<you>\Documents\Projects\stockfish\stockfish.exe
 PORT=3000
+ANALYSIS_STORAGE_DIR=C:\Users\<you>\Documents\ChessAnalyzer\analyses
 ```
 
 WSL/Linux example:
@@ -77,7 +79,11 @@ WSL/Linux example:
 ```env
 STOCKFISH_PATH=/mnt/c/Users/<you>/Documents/Projects/stockfish/stockfish.exe
 PORT=3000
+ANALYSIS_STORAGE_DIR=/mnt/c/Users/<you>/Documents/ChessAnalyzer/analyses
 ```
+
+If `ANALYSIS_STORAGE_DIR` is not set, default path is:
+- `storage/local/analyses` (inside project root)
 
 ---
 
@@ -165,6 +171,24 @@ Returns:
 - `202` still processing
 - `500` failed job payload
 - `404` unknown job
+
+Completed analysis payload now includes the original submitted PGN as `result.pgn`.
+
+### `GET /analysis/:jobId`
+Opens the analysis UI page for a specific job id.
+
+### `GET /api/analysis/:jobId`
+Returns persisted completed analysis from local storage.
+
+Returns:
+- `200` completed persisted result
+- `404` unknown `jobId`
+- `500` storage read/parse error
+
+Persisted analysis payload includes the original submitted PGN as `result.pgn`.
+
+Persisted files are stored at:
+- `storage/local/analyses/<jobId>.json`
 
 ---
 

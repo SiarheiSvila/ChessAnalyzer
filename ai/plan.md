@@ -317,6 +317,30 @@ Acceptance criteria:
 - Regression tests protect score parsing and labeling logic
 - Test gate: benchmark + soak tests pass within CI thresholds
 
+### Phase 7 — Persistent analysis storage and reusable retrieval API
+**Goal:** Persist completed analysis by `jobId` and allow repeated loading from disk-backed storage.
+
+Deliverables:
+- Local storage directory under project root: `storage/local/analyses/`
+- Disk persistence for completed analyses keyed by `jobId` (one JSON file per job)
+- New read API: `GET /analysis/:jobId`
+- Compatibility path retained for current clients (`GET /api/analyze/:jobId/result`)
+- Storage service abstraction (`AnalysisResultStore`) with local filesystem implementation
+- Metadata fields in persisted record (`jobId`, `createdAt`, `completedAt`, `analysisVersion`)
+
+Phase tests:
+- Unit: local storage adapter writes, reads, and handles missing/corrupt files
+- Unit: `AnalysisJobManager` persists on completion and does not persist failed jobs
+- API integration: `GET /analysis/:jobId` returns completed analysis after job completion
+- API integration: analysis remains retrievable after process restart (disk-backed behavior)
+
+Acceptance criteria:
+- Completed analyses survive process restart and can be fetched multiple times by `jobId`
+- `GET /analysis/:jobId` returns `200` with persisted payload for existing analysis
+- Missing `jobId` returns `404` with structured error payload
+- Existing async flow (`POST /api/analyze`, status polling, result fetch) remains functional
+- Test gate: new Phase 7 unit + integration suites pass in CI
+
 ## Performance Considerations
 - Full game at depth 18 is expensive; use two-pass strategy.
 - Parallel analysis should be limited by CPU cores.

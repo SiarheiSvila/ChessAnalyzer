@@ -6,6 +6,7 @@ export function createAnalyzeRoutes(controller: AnalyzeController): Router {
   const router = Router();
 
   router.post('/analyze', controller.createAnalysis);
+  router.get('/analysis/:jobId', controller.getStoredAnalysis);
   router.get('/analyze/:jobId/status', controller.getStatus);
   router.get('/analyze/:jobId/result', controller.getResult);
 
