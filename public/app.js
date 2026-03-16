@@ -93,6 +93,29 @@
       });
       elements.moveList.appendChild(item);
     });
+
+    requestAnimationFrame(() => {
+      centerActiveMoveInList(selectedIndex);
+    });
+  }
+
+  function centerActiveMoveInList(selectedIndex) {
+    if (selectedIndex < 0) {
+      return;
+    }
+
+    const activeItem = elements.moveList.children[selectedIndex];
+    if (!activeItem) {
+      return;
+    }
+
+    const listRect = elements.moveList.getBoundingClientRect();
+    const itemRect = activeItem.getBoundingClientRect();
+    const relativeItemTop = itemRect.top - listRect.top + elements.moveList.scrollTop;
+    const targetTop = relativeItemTop - (elements.moveList.clientHeight / 2 - activeItem.clientHeight / 2);
+    const maxTop = Math.max(0, elements.moveList.scrollHeight - elements.moveList.clientHeight);
+    const clampedTop = Math.max(0, Math.min(targetTop, maxTop));
+    elements.moveList.scrollTop = clampedTop;
   }
 
   function renderStep() {
