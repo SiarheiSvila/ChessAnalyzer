@@ -17,6 +17,7 @@
     moveList: document.getElementById('moveList'),
     evalChart: document.getElementById('evalChart'),
     evalDisplay: document.getElementById('evalDisplay'),
+    evalBarFill: document.getElementById('evalBarFill'),
     stepText: document.getElementById('stepText'),
     prevBtn: document.getElementById('prevBtn'),
     nextBtn: document.getElementById('nextBtn'),
@@ -95,19 +96,50 @@
     `;
   }
 
+  function updateEvalBar(move) {
+    const maxAbs = 1000;
+    const rawEval = window.UiHelpers.evalToNumberForPerspective(move.evalAfter, state.viewerColor, move.color);
+    const bounded = Math.max(-maxAbs, Math.min(maxAbs, rawEval));
+    
+    // Positive = white advantage (bar fills), negative = black advantage (bar empties)
+    const percentage = ((maxAbs + bounded) / (2 * maxAbs)) * 100;
+    
+    elements.evalBarFill.style.height = `${percentage}%`;
+  }
+
   function renderMoveList(moves, selectedIndex) {
     const rows = window.UiHelpers.buildMoveRows(moves, state.viewerColor);
     elements.moveList.innerHTML = '';
 
-    rows.forEach((row, index) => {
-      const item = document.createElement('li');
-      item.className = `move-item move-${row.color === 'b' ? 'black' : 'white'} ${index === selectedIndex ? 'active' : ''}`;
-      item.textContent = row.rowText;
-      item.addEventListener('click', () => {
-        state.selectedIndex = index;
+    rows.forEach((row, rowIndex) => {
+      const rowItem = document.createElement('li');
+      rowItem.className = 'move-row';
+
+      // White move
+      const whiteMove = document.createElement('span');
+      whiteMove.className = `move-item move-white ${row.white.index === selectedIndex ? 'active' : ''}`;
+      whiteMove.textContent = `${row.moveNumber}. ${row.white.rowText}`;
+      whiteMove.dataset.moveIndex = row.white.index;
+      whiteMove.addEventListener('click', () => {
+        state.selectedIndex = row.white.index;
         renderStep();
       });
-      elements.moveList.appendChild(item);
+      rowItem.appendChild(whiteMove);
+
+      // Black move (if exists)
+      if (row.black) {
+        const blackMove = document.createElement('span');
+        blackMove.className = `move-item move-black ${row.black.index === selectedIndex ? 'active' : ''}`;
+        blackMove.textContent = row.black.rowText;
+        blackMove.dataset.moveIndex = row.black.index;
+        blackMove.addEventListener('click', () => {
+          state.selectedIndex = row.black.index;
+          renderStep();
+        });
+        rowItem.appendChild(blackMove);
+      }
+
+      elements.moveList.appendChild(rowItem);
     });
 
     requestAnimationFrame(() => {
@@ -120,7 +152,7 @@
       return;
     }
 
-    const activeItem = elements.moveList.children[selectedIndex];
+    const activeItem = document.querySelector(`span[data-move-index="${selectedIndex}"]`);
     if (!activeItem) {
       return;
     }
@@ -155,6 +187,7 @@
     renderBoard(move.fenAfter);
     renderMoveList(moves, state.selectedIndex);
     renderChart(moves, state.selectedIndex);
+    updateEvalBar(move);
 
     elements.prevBtn.disabled = state.selectedIndex <= 0;
     elements.nextBtn.disabled = state.selectedIndex >= moves.length - 1;

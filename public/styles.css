@@ -157,6 +157,31 @@ button {
   align-items: center;
 }
 
+.board-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.eval-bar {
+  width: 20px;
+  height: var(--board-size);
+  background: #1f2937;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.eval-bar-fill {
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(to right, #f3f4f6 0%, #d1d5db 50%, #9ca3af 100%);
+  transition: height 0.2s ease;
+}
+
 .board {
   display: grid;
   grid-template-columns: repeat(8, var(--cell-size));
@@ -231,6 +256,14 @@ button {
   overflow-x: hidden;
 }
 
+.move-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 6px;
+  list-style: none;
+}
+
 .move-item {
   padding: 7px;
   border-radius: 6px;
@@ -240,6 +273,8 @@ button {
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
+  display: block;
+  border-left: 3px solid;
 }
 
 .move-item:hover {
@@ -249,16 +284,19 @@ button {
 .move-item.move-white:not(.active) {
   border-left: 3px solid #f3f4f6;
   background: rgba(243, 244, 246, 0.06);
+  color: #e5e7eb;
 }
 
 .move-item.move-black:not(.active) {
   border-left: 3px solid #9ca3af;
   background: rgba(17, 24, 39, 0.5);
+  color: #e5e7eb;
 }
 
 .move-item.active {
   background: #2563eb;
   border-left: 3px solid #2563eb;
+  color: #ffffff;
 }
 
 #evalChart {

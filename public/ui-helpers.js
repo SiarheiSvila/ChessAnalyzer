@@ -87,18 +87,46 @@
   }
 
   function buildMoveRows(moves, perspectiveColor) {
-    return moves.map((move) => {
-      const evalText = formatEval(normalizeScoreForPerspective(move.evalAfter, perspectiveColor, move.color));
-      return {
-        ply: move.ply,
-        color: move.color,
-        san: move.san,
-        label: move.label,
-        cpl: move.cpl,
-        evalText,
-        rowText: `${move.ply}. ${move.san} | ${evalText} | ${move.label}`,
+    const rows = [];
+    for (let i = 0; i < moves.length; i += 2) {
+      const whiteMove = moves[i];
+      const blackMove = moves[i + 1];
+      const moveNumber = Math.floor(i / 2) + 1;
+      
+      const whiteEval = formatEval(normalizeScoreForPerspective(whiteMove.evalAfter, perspectiveColor, whiteMove.color));
+      const whiteData = {
+        index: i,
+        moveNumber,
+        color: whiteMove.color,
+        san: whiteMove.san,
+        label: whiteMove.label,
+        cpl: whiteMove.cpl,
+        evalText: whiteEval,
+        rowText: `${whiteMove.san} | ${whiteEval} | ${whiteMove.label}`,
       };
-    });
+      
+      let blackData = null;
+      if (blackMove) {
+        const blackEval = formatEval(normalizeScoreForPerspective(blackMove.evalAfter, perspectiveColor, blackMove.color));
+        blackData = {
+          index: i + 1,
+          moveNumber,
+          color: blackMove.color,
+          san: blackMove.san,
+          label: blackMove.label,
+          cpl: blackMove.cpl,
+          evalText: blackEval,
+          rowText: `${blackMove.san} | ${blackEval} | ${blackMove.label}`,
+        };
+      }
+      
+      rows.push({
+        moveNumber,
+        white: whiteData,
+        black: blackData,
+      });
+    }
+    return rows;
   }
 
   function stepView(move, index, total, perspectiveColor) {
