@@ -171,10 +171,38 @@ button {
 .square {
   width: var(--cell-size);
   height: var(--cell-size);
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1em;
+}
+
+.coord-label {
+  position: absolute;
+  font-size: 0.2em;
+  line-height: 1;
+  font-weight: 600;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.rank-label {
+  top: 4px;
+  left: 4px;
+}
+
+.file-label {
+  right: 4px;
+  bottom: 4px;
+}
+
+.light .coord-label {
+  color: #4b5563;
+}
+
+.dark .coord-label {
+  color: #d1d5db;
 }
 
 .light {

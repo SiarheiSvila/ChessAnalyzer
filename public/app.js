@@ -38,6 +38,7 @@
 
   function renderBoard(fen) {
     const squares = window.UiHelpers.boardFromFen(fen);
+    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     elements.board.innerHTML = '';
 
     for (let index = 0; index < squares.length; index += 1) {
@@ -46,6 +47,21 @@
       const square = document.createElement('div');
       square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
       square.textContent = squares[index] || '';
+
+      if (col === 0) {
+        const rankLabel = document.createElement('span');
+        rankLabel.className = 'coord-label rank-label';
+        rankLabel.textContent = String(8 - row);
+        square.appendChild(rankLabel);
+      }
+
+      if (row === 7) {
+        const fileLabel = document.createElement('span');
+        fileLabel.className = 'coord-label file-label';
+        fileLabel.textContent = files[col];
+        square.appendChild(fileLabel);
+      }
+
       elements.board.appendChild(square);
     }
   }
