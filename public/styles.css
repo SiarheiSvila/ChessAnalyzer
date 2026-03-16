@@ -152,9 +152,32 @@ button {
 .controls {
   width: 100%;
   display: grid;
-  grid-template-columns: 90px 1fr 90px;
+  grid-template-columns: repeat(5, minmax(60px, 1fr));
   gap: 8px;
   align-items: center;
+}
+
+.controls .nav-btn {
+  width: 100%;
+  height: 56px;
+  border-radius: 12px;
+  border: 1px solid #3f3f46;
+  background: linear-gradient(180deg, #3f3f46 0%, #27272a 100%);
+  color: #f4f4f5;
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.controls .nav-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.controls .nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .board-container {

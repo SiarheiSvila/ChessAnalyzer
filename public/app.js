@@ -5,6 +5,7 @@
     analysis: null,
     selectedIndex: -1,
     viewerColor: null,
+    playTimerId: null,
   };
 
   const elements = {
@@ -18,9 +19,11 @@
     evalChart: document.getElementById('evalChart'),
     evalDisplay: document.getElementById('evalDisplay'),
     evalBarFill: document.getElementById('evalBarFill'),
-    stepText: document.getElementById('stepText'),
+    firstBtn: document.getElementById('firstBtn'),
     prevBtn: document.getElementById('prevBtn'),
+    playBtn: document.getElementById('playBtn'),
     nextBtn: document.getElementById('nextBtn'),
+    lastBtn: document.getElementById('lastBtn'),
     detailSan: document.getElementById('detailSan'),
     detailLabel: document.getElementById('detailLabel'),
     detailCpl: document.getElementById('detailCpl'),
@@ -121,6 +124,7 @@
       whiteMove.textContent = `${row.moveNumber}. ${row.white.rowText}`;
       whiteMove.dataset.moveIndex = row.white.index;
       whiteMove.addEventListener('click', () => {
+        stopAutoplay();
         state.selectedIndex = row.white.index;
         renderStep();
       });
@@ -133,6 +137,7 @@
         blackMove.textContent = row.black.rowText;
         blackMove.dataset.moveIndex = row.black.index;
         blackMove.addEventListener('click', () => {
+          stopAutoplay();
           state.selectedIndex = row.black.index;
           renderStep();
         });
@@ -166,6 +171,56 @@
     elements.moveList.scrollTop = clampedTop;
   }
 
+  function stopAutoplay() {
+    if (state.playTimerId !== null) {
+      clearInterval(state.playTimerId);
+      state.playTimerId = null;
+    }
+  }
+
+  function updateNavigationButtons(movesLength) {
+    const hasMoves = movesLength > 0 && state.selectedIndex >= 0;
+    const atStart = !hasMoves || state.selectedIndex <= 0;
+    const atEnd = !hasMoves || state.selectedIndex >= movesLength - 1;
+
+    elements.firstBtn.disabled = atStart;
+    elements.prevBtn.disabled = atStart;
+    elements.nextBtn.disabled = atEnd;
+    elements.lastBtn.disabled = atEnd;
+    elements.playBtn.disabled = !hasMoves;
+    elements.playBtn.textContent = state.playTimerId === null ? '▶' : '⏸';
+  }
+
+  function playMoves() {
+    if (!state.analysis || state.analysis.moves.length === 0) {
+      return;
+    }
+
+    if (state.selectedIndex >= state.analysis.moves.length - 1) {
+      state.selectedIndex = 0;
+      renderStep();
+    }
+
+    if (state.playTimerId !== null) {
+      stopAutoplay();
+      updateNavigationButtons(state.analysis.moves.length);
+      return;
+    }
+
+    state.playTimerId = setInterval(() => {
+      if (!state.analysis || state.selectedIndex >= state.analysis.moves.length - 1) {
+        stopAutoplay();
+        renderStep();
+        return;
+      }
+
+      state.selectedIndex += 1;
+      renderStep();
+    }, 2000);
+
+    updateNavigationButtons(state.analysis.moves.length);
+  }
+
   function renderStep() {
     if (!state.analysis || state.selectedIndex < 0) {
       return;
@@ -175,7 +230,6 @@
     const move = moves[state.selectedIndex];
     const view = window.UiHelpers.stepView(move, state.selectedIndex, moves.length, state.viewerColor);
 
-    elements.stepText.textContent = view.stepText;
     elements.evalDisplay.textContent = view.evalDisplay;
     elements.detailSan.textContent = `SAN: ${view.details.san}`;
     elements.detailLabel.textContent = `Label: ${view.details.label}`;
@@ -188,9 +242,7 @@
     renderMoveList(moves, state.selectedIndex);
     renderChart(moves, state.selectedIndex);
     updateEvalBar(move);
-
-    elements.prevBtn.disabled = state.selectedIndex <= 0;
-    elements.nextBtn.disabled = state.selectedIndex >= moves.length - 1;
+    updateNavigationButtons(moves.length);
   }
 
   async function pollResult(jobId) {
@@ -224,6 +276,7 @@
     }
 
     elements.analyzeBtn.disabled = true;
+    stopAutoplay();
     setStatus('Submitting analysis...');
     setProgress(0);
 
@@ -257,6 +310,7 @@
         renderStep();
       } else {
         setStatus('Analysis completed with no moves.');
+        updateNavigationButtons(0);
       }
     } catch (error) {
       setStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -274,6 +328,7 @@
       return;
     }
 
+    stopAutoplay();
     state.selectedIndex -= 1;
     renderStep();
   });
@@ -283,7 +338,32 @@
       return;
     }
 
+    stopAutoplay();
     state.selectedIndex += 1;
     renderStep();
+  });
+
+  elements.firstBtn.addEventListener('click', () => {
+    if (!state.analysis || state.analysis.moves.length === 0) {
+      return;
+    }
+
+    stopAutoplay();
+    state.selectedIndex = 0;
+    renderStep();
+  });
+
+  elements.lastBtn.addEventListener('click', () => {
+    if (!state.analysis || state.analysis.moves.length === 0) {
+      return;
+    }
+
+    stopAutoplay();
+    state.selectedIndex = state.analysis.moves.length - 1;
+    renderStep();
+  });
+
+  elements.playBtn.addEventListener('click', () => {
+    playMoves();
   });
 })();

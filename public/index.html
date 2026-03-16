@@ -41,9 +41,11 @@
       <div class="column center-column">
         <section class="panel board-panel">
           <div class="controls">
-            <button id="prevBtn" disabled>Prev</button>
-            <span id="stepText">Step: -</span>
-            <button id="nextBtn" disabled>Next</button>
+            <button id="firstBtn" class="nav-btn" disabled aria-label="First move">⏮</button>
+            <button id="prevBtn" class="nav-btn" disabled aria-label="Previous move">◀</button>
+            <button id="playBtn" class="nav-btn" disabled aria-label="Play moves">▶</button>
+            <button id="nextBtn" class="nav-btn" disabled aria-label="Next move">▶</button>
+            <button id="lastBtn" class="nav-btn" disabled aria-label="Last move">⏭</button>
           </div>
           <div class="board-container">
             <div class="eval-bar">
