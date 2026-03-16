@@ -91,6 +91,7 @@
       const evalText = formatEval(normalizeScoreForPerspective(move.evalAfter, perspectiveColor, move.color));
       return {
         ply: move.ply,
+        color: move.color,
         san: move.san,
         label: move.label,
         cpl: move.cpl,

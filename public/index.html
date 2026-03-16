@@ -8,53 +8,59 @@
   </head>
   <body>
     <main class="layout">
-      <section class="panel input-panel">
-        <h1>Chess Analyzer</h1>
-        <p>Paste PGN and run Stockfish analysis.</p>
-        <label for="pgnInput">PGN</label>
-        <textarea id="pgnInput" rows="10" placeholder="Paste PGN here"></textarea>
+      <div class="column left-column">
+        <section class="panel input-panel">
+          <h1>Chess Analyzer</h1>
+          <p>Paste PGN and run Stockfish analysis.</p>
+          <label for="pgnInput">PGN</label>
+          <textarea id="pgnInput" rows="10" placeholder="Paste PGN here"></textarea>
 
-        <div class="input-row">
-          <label for="depthInput">Depth</label>
-          <input id="depthInput" type="number" min="1" max="20" value="10" />
-          <button id="analyzeBtn">Analyze</button>
-        </div>
+          <div class="input-row">
+            <label for="depthInput">Depth</label>
+            <input id="depthInput" type="number" min="1" max="20" value="10" />
+            <button id="analyzeBtn">Analyze</button>
+          </div>
 
-        <div id="statusText" class="status">Idle</div>
-        <div class="progress-wrap">
-          <div id="progressBar" class="progress-bar"></div>
-        </div>
-      </section>
+          <div id="statusText" class="status">Idle</div>
+          <div class="progress-wrap">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+        </section>
 
-      <section class="panel board-panel">
-        <div class="controls">
-          <button id="prevBtn" disabled>Prev</button>
-          <span id="stepText">Step: -</span>
-          <button id="nextBtn" disabled>Next</button>
-        </div>
-        <div id="board" class="board"></div>
-        <div id="evalDisplay" class="eval-display">Eval: -</div>
-      </section>
+        <section class="panel details-panel">
+          <h2>Move Details</h2>
+          <div id="detailSan">SAN: -</div>
+          <div id="detailLabel">Label: -</div>
+          <div id="detailCpl">CPL: -</div>
+          <div id="detailBest">Best Move: -</div>
+          <div id="detailEvalBefore">Eval Before: -</div>
+          <div id="detailEvalAfter">Eval After: -</div>
+        </section>
+      </div>
 
-      <section class="panel moves-panel">
-        <h2>Move List</h2>
-        <ul id="moveList" class="move-list"></ul>
-      </section>
+      <div class="column center-column">
+        <section class="panel board-panel">
+          <div class="controls">
+            <button id="prevBtn" disabled>Prev</button>
+            <span id="stepText">Step: -</span>
+            <button id="nextBtn" disabled>Next</button>
+          </div>
+          <div id="board" class="board"></div>
+          <div id="evalDisplay" class="eval-display">Eval: -</div>
+        </section>
+      </div>
 
-      <section class="panel chart-panel">
-        <h2>Evaluation Graph</h2>
-        <svg id="evalChart" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
-      </section>
+      <div class="column right-column">
+        <section class="panel chart-panel">
+          <h2>Evaluation Graph</h2>
+          <svg id="evalChart" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
+        </section>
 
-      <section class="panel details-panel">
-        <h2>Move Details</h2>
-        <div id="detailSan">SAN: -</div>
-        <div id="detailLabel">Label: -</div>
-        <div id="detailCpl">CPL: -</div>
-        <div id="detailBest">Best Move: -</div>
-        <div id="detailEvalBefore">Eval Before: -</div>
-        <div id="detailEvalAfter">Eval After: -</div>
-      </section>
+        <section class="panel moves-panel">
+          <h2>Move List</h2>
+          <ul id="moveList" class="move-list"></ul>
+        </section>
+      </div>
     </main>
 
     <script src="/ui-helpers.js"></script>

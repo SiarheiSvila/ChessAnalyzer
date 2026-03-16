@@ -85,7 +85,7 @@
 
     rows.forEach((row, index) => {
       const item = document.createElement('li');
-      item.className = `move-item ${index === selectedIndex ? 'active' : ''}`;
+      item.className = `move-item move-${row.color === 'b' ? 'black' : 'white'} ${index === selectedIndex ? 'active' : ''}`;
       item.textContent = row.rowText;
       item.addEventListener('click', () => {
         state.selectedIndex = index;

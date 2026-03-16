@@ -1,6 +1,10 @@
 :root {
   color-scheme: light dark;
   font-family: Inter, Segoe UI, sans-serif;
+  --app-gap: 10px;
+  --panel-pad: 10px;
+  --cell-size: 64px;
+  --board-size: calc(var(--cell-size) * 8);
 }
 
 *,
@@ -18,53 +22,65 @@ body {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(360px, 1fr) minmax(300px, 390px);
-  grid-template-areas:
-    "input board chart"
-    "details board moves";
-  gap: 10px;
-  align-items: stretch;
+  grid-template-columns: minmax(260px, 320px) minmax(540px, 1fr) minmax(300px, 390px);
+  gap: var(--app-gap);
   min-height: calc(100vh - 20px);
+}
+
+.column {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-gap);
+}
+
+.left-column,
+.right-column {
+  height: calc(100vh - 20px);
+}
+
+.center-column {
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .panel {
   background: #1f2937;
   border: 1px solid #374151;
   border-radius: 10px;
-  padding: 10px;
+  padding: var(--panel-pad);
   min-width: 0;
+  min-height: 0;
 }
 
 .input-panel {
-  grid-area: input;
-}
-
-.board-panel {
-  grid-area: board;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 10px;
-  align-content: start;
-}
-
-.moves-panel {
-  grid-area: moves;
-  min-width: 0;
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  max-height: 330px;
-  overflow: hidden;
+  flex: 0 0 auto;
 }
 
 .details-panel {
-  grid-area: details;
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.board-panel {
+  width: 100%;
+  max-width: calc(var(--board-size) + (var(--panel-pad) * 2) + 2px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
 }
 
 .chart-panel {
-  grid-area: chart;
+  flex: 0 0 auto;
+}
+
+.moves-panel {
+  flex: 1 1 auto;
   display: grid;
   grid-template-rows: auto 1fr;
+  overflow: hidden;
 }
 
 h1,
@@ -98,7 +114,6 @@ textarea,
 input,
 button {
   width: 100%;
-  box-sizing: border-box;
   padding: 8px;
   border-radius: 8px;
   border: 1px solid #4b5563;
@@ -135,29 +150,27 @@ button {
 }
 
 .controls {
+  width: 100%;
   display: grid;
   grid-template-columns: 90px 1fr 90px;
   gap: 8px;
   align-items: center;
-  margin-bottom: 0;
 }
 
 .board {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  width: 100%;
-  max-width: min(100%, 520px);
-  aspect-ratio: 1 / 1;
-  font-size: clamp(1.6rem, 4.4vw, 3.4rem);
+  grid-template-columns: repeat(8, var(--cell-size));
+  grid-template-rows: repeat(8, var(--cell-size));
+  width: var(--board-size);
+  height: var(--board-size);
+  font-size: calc(var(--cell-size) * 0.72);
   border: 1px solid #4b5563;
-  margin: 0 auto;
-  align-self: start;
+  flex: 0 0 auto;
 }
 
 .square {
-  width: 100%;
-  height: 100%;
+  width: var(--cell-size);
+  height: var(--cell-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -175,7 +188,8 @@ button {
 }
 
 .eval-display {
-  margin-top: 0;
+  width: 100%;
+  margin: 0;
   font-weight: 600;
   text-align: center;
 }
@@ -184,8 +198,6 @@ button {
   list-style: none;
   margin: 0;
   padding: 0;
-  height: 100%;
-  max-height: 100%;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -206,8 +218,19 @@ button {
   background: #374151;
 }
 
+.move-item.move-white:not(.active) {
+  border-left: 3px solid #f3f4f6;
+  background: rgba(243, 244, 246, 0.06);
+}
+
+.move-item.move-black:not(.active) {
+  border-left: 3px solid #9ca3af;
+  background: rgba(17, 24, 39, 0.5);
+}
+
 .move-item.active {
   background: #2563eb;
+  border-left: 3px solid #2563eb;
 }
 
 #evalChart {
@@ -224,23 +247,41 @@ button {
   font-size: 0.92rem;
 }
 
-@media (max-width: 1100px) {
-  .layout {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "input"
-      "details"
-      "board"
-      "chart"
-      "moves";
-    min-height: auto;
+@media (max-width: 1300px) {
+  :root {
+    --cell-size: 58px;
   }
 
-  .board {
-    max-width: 100%;
+  .layout {
+    grid-template-columns: minmax(250px, 300px) minmax(500px, 1fr) minmax(280px, 340px);
   }
 }
 
-.moves-panel {
-  max-height: 290px;
+@media (max-width: 1100px) {
+  :root {
+    --cell-size: 50px;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .left-column,
+  .right-column {
+    height: auto;
+  }
+
+  .board-panel {
+    max-width: 100%;
+  }
+
+  .board {
+    width: var(--board-size);
+    height: var(--board-size);
+  }
+
+  .moves-panel {
+    max-height: 360px;
+  }
 }
