@@ -377,6 +377,46 @@
     updateNavigationButtons(state.analysis.moves.length);
   }
 
+  function isTypingTarget(target) {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    const tagName = target.tagName.toLowerCase();
+    return tagName === 'input' || tagName === 'textarea' || target.isContentEditable;
+  }
+
+  function handleKeyboardNavigation(event) {
+    if (isTypingTarget(event.target) || !state.analysis) {
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      if (state.selectedIndex > 0) {
+        stopAutoplay();
+        state.selectedIndex -= 1;
+        renderStep();
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      if (state.selectedIndex < state.analysis.moves.length - 1) {
+        stopAutoplay();
+        state.selectedIndex += 1;
+        renderStep();
+      }
+      return;
+    }
+
+    if (event.key === ' ' || event.key === 'Spacebar') {
+      event.preventDefault();
+      playMoves();
+    }
+  }
+
   function renderStep() {
     if (!state.analysis || state.selectedIndex < 0) {
       return;
@@ -560,6 +600,8 @@
   elements.playBtn.addEventListener('click', () => {
     playMoves();
   });
+
+  document.addEventListener('keydown', handleKeyboardNavigation);
 
   const jobIdFromPath = getJobIdFromPath();
   if (jobIdFromPath) {

@@ -2,7 +2,7 @@
 
 A Stockfish-powered chess game analyzer that evaluates every move from PGN, labels move quality, detects critical moments, and shows results in a web UI.
 
-![UI Preview](docs/ui-preview.svg)
+![UI Preview](docs/ui.png)
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
