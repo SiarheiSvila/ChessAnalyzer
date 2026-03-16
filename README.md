@@ -2,7 +2,13 @@
 
 A Stockfish-powered chess game analyzer that evaluates every move from PGN, labels move quality, detects critical moments, and shows results in a web UI.
 
-![UI Preview](docs/ui.png)
+## Screenshots
+
+### Analysis UI
+![Analysis UI](docs/ui.png)
+
+### Admin Page
+![Admin Page](docs/admin.png)
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
@@ -16,6 +22,7 @@ A Stockfish-powered chess game analyzer that evaluates every move from PGN, labe
 - [Hello World](#hello-world)
 - [Features](#features)
 - [API Reference](#api-reference)
+- [Pages and Navigation](#pages-and-navigation)
 - [Frontend](#frontend)
 - [Development Commands](#development-commands)
 - [Troubleshooting](#troubleshooting)
@@ -140,8 +147,15 @@ curl http://localhost:3000/api/analyze/<jobId>/result
   - Fast pass for all moves
   - Deep pass for critical/high-CPL plies
 - FEN evaluation cache (hit/miss tracked)
-- In-memory async job orchestration with progress tracking
+- Async job orchestration with progress tracking
+- Persistent completed analyses by `jobId`
 - Web UI with board, move list, eval graph, and move details
+- Auto-redirect to `/analysis/:jobId` after analysis completion
+- Keyboard navigation in analysis viewer:
+  - `←` previous move
+  - `→` next move
+  - `Space` play/pause autoplay
+- Admin page with stored games list (sorted by date) and one-click review
 
 ---
 
@@ -186,18 +200,41 @@ Opens admin page listing stored analyzed games sorted by date.
 ### `GET /api/analysis/:jobId`
 Returns persisted completed analysis from local storage.
 
-### `GET /api/admin/games`
-Returns stored game list for admin page (players, result, moves, date), sorted by date descending.
-
 Returns:
 - `200` completed persisted result
 - `404` unknown `jobId`
 - `500` storage read/parse error
 
+### `GET /api/admin/games`
+Returns stored game list for admin page (players, result, moves, date), sorted by date descending.
+
+### `DELETE /api/admin/games/:jobId`
+Deletes a persisted stored game/analysis by `jobId`.
+
+Returns:
+- `200` `{ "ok": true, "jobId": "..." }`
+- `404` unknown `jobId`
+- `500` storage delete error
+
 Persisted analysis payload includes the original submitted PGN as `result.pgn`.
 
 Persisted files are stored at:
-- `storage/local/analyses/<jobId>.json`
+- `${ANALYSIS_STORAGE_DIR}/<jobId>.json`
+- default fallback: `storage/local/analyses/<jobId>.json`
+
+---
+
+## Pages and Navigation
+
+- `/` main analysis page for PGN input and starting new analysis jobs.
+- `/analysis/:jobId` analysis viewer page for a saved game.
+- `/admin` admin page with all persisted games.
+
+Analysis flow:
+1. Paste PGN on `/` and click **Analyze**.
+2. App creates async job via `POST /api/analyze`.
+3. UI polls status until completed.
+4. UI redirects to `/analysis/:jobId` and loads persisted result.
 
 ---
 
@@ -210,6 +247,9 @@ UI is served from `public/` and includes:
 - Move list with eval text on every move row
 - Eval graph over time
 - Move detail panel
+- Board flip support based on configured player color/viewer preference
+- Keyboard controls (`←`, `→`, `Space`) for move navigation/autoplay
+- Admin page actions: review game and delete persisted game
 
 Evaluation is updated after every step selection (Prev/Next or move click).
 
