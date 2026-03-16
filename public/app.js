@@ -107,7 +107,7 @@
     // Positive = white advantage (bar fills), negative = black advantage (bar empties)
     const percentage = ((maxAbs + bounded) / (2 * maxAbs)) * 100;
     
-    elements.evalBarFill.style.height = `${percentage}%`;
+    elements.evalBarFill.style.setProperty('--eval-percent', `${percentage}%`);
   }
 
   function renderMoveList(moves, selectedIndex) {
