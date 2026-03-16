@@ -110,6 +110,25 @@
     elements.evalBarFill.style.setProperty('--eval-percent', `${percentage}%`);
   }
 
+  function qualityClassFromLabel(label) {
+    if (!label) {
+      return '';
+    }
+
+    const normalized = label.trim().toLowerCase();
+    const map = {
+      blunder: 'blunder',
+      mistake: 'mistake',
+      inaccuracy: 'inaccuracy',
+      excellent: 'excellent',
+      exccelent: 'excellent',
+      best: 'best',
+      good: 'good',
+    };
+
+    return map[normalized] ?? '';
+  }
+
   function renderMoveList(moves, selectedIndex) {
     const rows = window.UiHelpers.buildMoveRows(moves, state.viewerColor);
     elements.moveList.innerHTML = '';
@@ -120,8 +139,9 @@
 
       // White move
       const whiteMove = document.createElement('span');
-      whiteMove.className = `move-item move-white ${row.white.index === selectedIndex ? 'active' : ''}`;
-      whiteMove.textContent = `${row.moveNumber}. ${row.white.rowText}`;
+      const whiteQuality = qualityClassFromLabel(row.white.label);
+      whiteMove.className = `move-item move-white ${whiteQuality ? `move-quality-${whiteQuality}` : ''} ${row.white.index === selectedIndex ? 'active' : ''}`;
+      whiteMove.innerHTML = `<span class="move-number">${row.moveNumber}.</span><span class="move-pill">${row.white.san}</span><span class="move-meta">| ${row.white.evalText} | ${row.white.label}</span>`;
       whiteMove.dataset.moveIndex = row.white.index;
       whiteMove.addEventListener('click', () => {
         stopAutoplay();
@@ -133,8 +153,9 @@
       // Black move (if exists)
       if (row.black) {
         const blackMove = document.createElement('span');
-        blackMove.className = `move-item move-black ${row.black.index === selectedIndex ? 'active' : ''}`;
-        blackMove.textContent = row.black.rowText;
+        const blackQuality = qualityClassFromLabel(row.black.label);
+        blackMove.className = `move-item move-black ${blackQuality ? `move-quality-${blackQuality}` : ''} ${row.black.index === selectedIndex ? 'active' : ''}`;
+        blackMove.innerHTML = `<span class="move-pill">${row.black.san}</span><span class="move-meta">| ${row.black.evalText} | ${row.black.label}</span>`;
         blackMove.dataset.moveIndex = row.black.index;
         blackMove.addEventListener('click', () => {
           stopAutoplay();
