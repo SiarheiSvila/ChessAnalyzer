@@ -10,7 +10,10 @@
     <main class="layout">
       <div class="column left-column">
         <section class="panel input-panel">
-          <h1>Chess Analyzer</h1>
+          <div class="panel-header">
+            <h1>Chess Analyzer</h1>
+            <a class="admin-link" href="/admin">Admin</a>
+          </div>
           <p>Paste PGN and run Stockfish analysis.</p>
           <label for="pgnInput">PGN</label>
           <textarea id="pgnInput" rows="10" placeholder="Paste PGN here"></textarea>
@@ -40,12 +43,14 @@
 
       <div class="column center-column">
         <section class="panel board-panel">
+          <div class="board-player board-player-top" id="boardPlayerTop">Black: -</div>
           <div class="board-container">
             <div class="eval-bar">
               <div id="evalBarFill" class="eval-bar-fill"></div>
             </div>
             <div id="board" class="board"></div>
           </div>
+          <div class="board-player board-player-bottom" id="boardPlayerBottom">White: -</div>
           <div id="evalDisplay" class="eval-display">Eval: -</div>
           <div class="controls">
             <button id="firstBtn" class="nav-btn" disabled aria-label="First move">⏮</button>

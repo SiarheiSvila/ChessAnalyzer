@@ -12,6 +12,20 @@ interface AnalyzeRequestBody {
   synchronous?: unknown;
 }
 
+interface AdminGameListItem {
+  jobId: string;
+  myName: string;
+  myColor: 'white' | 'black';
+  myElo: string;
+  opponentName: string;
+  opponentColor: 'white' | 'black';
+  opponentElo: string;
+  outcome: 'Win' | 'Loss' | 'Draw' | 'Unknown';
+  moves: number;
+  date: string;
+  sortDate: string;
+}
+
 function asValidDepth(input: unknown): number | undefined {
   if (input === undefined) {
     return undefined;
@@ -22,6 +36,55 @@ function asValidDepth(input: unknown): number | undefined {
   }
 
   return Math.floor(input);
+}
+
+function normalizeName(name: string | undefined): string {
+  return typeof name === 'string' && name.trim().length > 0 ? name.trim() : 'Unknown';
+}
+
+function normalizeElo(elo: string | undefined): string {
+  return typeof elo === 'string' && elo.trim().length > 0 ? elo.trim() : '-';
+}
+
+function parseDateToIso(dateHeader: string | undefined, fallbackIso: string): string {
+  if (typeof dateHeader !== 'string' || dateHeader.trim().length === 0) {
+    return fallbackIso;
+  }
+
+  const normalized = dateHeader.trim();
+  const match = normalized.match(/^(\d{4})[.\/-](\d{2})[.\/-](\d{2})$/);
+  if (!match) {
+    return fallbackIso;
+  }
+
+  const year = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const day = Number.parseInt(match[3], 10);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  if (Number.isNaN(parsed.getTime())) {
+    return fallbackIso;
+  }
+
+  return parsed.toISOString();
+}
+
+function toOutcome(result: string | undefined, myColor: 'white' | 'black'): 'Win' | 'Loss' | 'Draw' | 'Unknown' {
+  const normalized = typeof result === 'string' ? result.trim() : '';
+
+  if (normalized === '1-0') {
+    return myColor === 'white' ? 'Win' : 'Loss';
+  }
+
+  if (normalized === '0-1') {
+    return myColor === 'black' ? 'Win' : 'Loss';
+  }
+
+  if (normalized === '1/2-1/2') {
+    return 'Draw';
+  }
+
+  return 'Unknown';
 }
 
 export class AnalyzeController {
@@ -224,6 +287,124 @@ export class AnalyzeController {
       });
     } catch (error) {
       const appError = error instanceof AppError ? error : new AppError('Failed to read persisted analysis.', 'STORAGE_ERROR', error);
+      response.status(500).json({
+        error: {
+          code: appError.code,
+          message: appError.message,
+        },
+      });
+    }
+  };
+
+  public getAdminGames = async (request: Request, response: Response): Promise<void> => {
+    if (!this.analysisResultStore?.listAll) {
+      response.status(200).json({ games: [] });
+      return;
+    }
+
+    const configuredPlayer = typeof request.query.player === 'string' && request.query.player.trim().length > 0
+      ? request.query.player.trim()
+      : (process.env.ADMIN_PLAYER_NAME ?? '').trim();
+
+    try {
+      const records = await this.analysisResultStore.listAll();
+      const inferredPlayer = (() => {
+        if (configuredPlayer.length > 0) {
+          return configuredPlayer;
+        }
+
+        const counts = new Map<string, number>();
+        for (const record of records) {
+          const headers = record.result.game.headers;
+          const whiteName = normalizeName(headers.White ?? record.result.game.white);
+          const blackName = normalizeName(headers.Black ?? record.result.game.black);
+
+          counts.set(whiteName, (counts.get(whiteName) ?? 0) + 1);
+          counts.set(blackName, (counts.get(blackName) ?? 0) + 1);
+        }
+
+        let bestName = '';
+        let bestCount = 0;
+        for (const [name, count] of counts.entries()) {
+          if (count > bestCount) {
+            bestName = name;
+            bestCount = count;
+          }
+        }
+
+        return bestName;
+      })();
+
+      const effectivePlayer = inferredPlayer.trim();
+      const games: AdminGameListItem[] = records.map((record) => {
+        const headers = record.result.game.headers;
+        const whiteName = normalizeName(headers.White ?? record.result.game.white);
+        const blackName = normalizeName(headers.Black ?? record.result.game.black);
+        const whiteElo = normalizeElo(headers.WhiteElo);
+        const blackElo = normalizeElo(headers.BlackElo);
+
+        const playerMatchesWhite = effectivePlayer.length > 0 && whiteName.toLowerCase() === effectivePlayer.toLowerCase();
+        const playerMatchesBlack = effectivePlayer.length > 0 && blackName.toLowerCase() === effectivePlayer.toLowerCase();
+
+        const myColor: 'white' | 'black' = playerMatchesBlack && !playerMatchesWhite ? 'black' : 'white';
+        const sortDate = parseDateToIso(headers.Date, record.completedAt);
+
+        return {
+          jobId: record.jobId,
+          myName: myColor === 'white' ? whiteName : blackName,
+          myColor,
+          myElo: myColor === 'white' ? whiteElo : blackElo,
+          opponentName: myColor === 'white' ? blackName : whiteName,
+          opponentColor: myColor === 'white' ? 'black' : 'white',
+          opponentElo: myColor === 'white' ? blackElo : whiteElo,
+          outcome: toOutcome(record.result.game.result ?? headers.Result, myColor),
+          moves: Math.ceil(record.result.moves.length / 2),
+          date: headers.Date ?? sortDate.slice(0, 10),
+          sortDate,
+        };
+      });
+
+      games.sort((left, right) => Date.parse(right.sortDate) - Date.parse(left.sortDate));
+      response.status(200).json({ games });
+    } catch (error) {
+      const appError = error instanceof AppError ? error : new AppError('Failed to load stored games.', 'STORAGE_ERROR', error);
+      response.status(500).json({
+        error: {
+          code: appError.code,
+          message: appError.message,
+        },
+      });
+    }
+  };
+
+  public deleteAdminGame = async (request: Request, response: Response): Promise<void> => {
+    const jobId = Array.isArray(request.params.jobId) ? request.params.jobId[0] : request.params.jobId;
+
+    if (!this.analysisResultStore?.deleteByJobId) {
+      response.status(501).json({
+        error: {
+          code: 'DELETE_NOT_SUPPORTED',
+          message: 'Deleting stored games is not supported by the configured storage.',
+        },
+      });
+      return;
+    }
+
+    try {
+      const deleted = await this.analysisResultStore.deleteByJobId(jobId);
+      if (!deleted) {
+        response.status(404).json({
+          error: {
+            code: 'JOB_NOT_FOUND',
+            message: 'Stored game was not found.',
+          },
+        });
+        return;
+      }
+
+      response.status(200).json({ ok: true, jobId });
+    } catch (error) {
+      const appError = error instanceof AppError ? error : new AppError('Failed to delete stored game.', 'STORAGE_DELETE_ERROR', error);
       response.status(500).json({
         error: {
           code: appError.code,

@@ -23,6 +23,10 @@ export function createApp(jobManager: AnalysisJobManager, analysisResultStore?: 
     response.sendFile(path.join(publicDir, 'index.html'));
   });
 
+  app.get('/admin', (_request, response) => {
+    response.sendFile(path.join(publicDir, 'admin.html'));
+  });
+
   app.use('/api', createAnalyzeRoutes(controller));
 
   return app;

@@ -11,4 +11,6 @@ export interface PersistedAnalysisRecord {
 export interface AnalysisResultStore {
   save(record: PersistedAnalysisRecord): Promise<void>;
   getByJobId(jobId: string): Promise<PersistedAnalysisRecord | undefined>;
+  listAll?(): Promise<PersistedAnalysisRecord[]>;
+  deleteByJobId?(jobId: string): Promise<boolean>;
 }

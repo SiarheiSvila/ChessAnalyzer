@@ -64,6 +64,7 @@ Create or edit `.env` in project root:
 STOCKFISH_PATH=/absolute/path/to/stockfish
 PORT=3000
 ANALYSIS_STORAGE_DIR=/absolute/path/to/analysis/storage
+ADMIN_PLAYER_NAME=sergei1506
 ```
 
 Windows example:
@@ -72,6 +73,7 @@ Windows example:
 STOCKFISH_PATH=C:\Users\<you>\Documents\Projects\stockfish\stockfish.exe
 PORT=3000
 ANALYSIS_STORAGE_DIR=C:\Users\<you>\Documents\ChessAnalyzer\analyses
+ADMIN_PLAYER_NAME=<your_chess_username>
 ```
 
 WSL/Linux example:
@@ -80,6 +82,7 @@ WSL/Linux example:
 STOCKFISH_PATH=/mnt/c/Users/<you>/Documents/Projects/stockfish/stockfish.exe
 PORT=3000
 ANALYSIS_STORAGE_DIR=/mnt/c/Users/<you>/Documents/ChessAnalyzer/analyses
+ADMIN_PLAYER_NAME=<your_chess_username>
 ```
 
 If `ANALYSIS_STORAGE_DIR` is not set, default path is:
@@ -177,8 +180,14 @@ Completed analysis payload now includes the original submitted PGN as `result.pg
 ### `GET /analysis/:jobId`
 Opens the analysis UI page for a specific job id.
 
+### `GET /admin`
+Opens admin page listing stored analyzed games sorted by date.
+
 ### `GET /api/analysis/:jobId`
 Returns persisted completed analysis from local storage.
+
+### `GET /api/admin/games`
+Returns stored game list for admin page (players, result, moves, date), sorted by date descending.
 
 Returns:
 - `200` completed persisted result

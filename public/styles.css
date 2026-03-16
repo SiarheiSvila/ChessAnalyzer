@@ -75,6 +75,22 @@ body {
   align-items: center;
 }
 
+.board-player {
+  width: var(--board-cluster-size);
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  background: #111827;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .chart-panel {
   flex: 0 0 auto;
 }
@@ -106,6 +122,35 @@ h2 {
   margin-bottom: 8px;
   color: #9ca3af;
   font-size: 0.9rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-header h1 {
+  margin-bottom: 0;
+}
+
+.admin-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  background: linear-gradient(180deg, #334155 0%, #1f2937 100%);
+  color: #e5e7eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-link:hover {
+  filter: brightness(1.08);
 }
 
 label {

@@ -19,6 +19,8 @@
     evalChart: document.getElementById('evalChart'),
     evalDisplay: document.getElementById('evalDisplay'),
     evalBarFill: document.getElementById('evalBarFill'),
+    boardPlayerTop: document.getElementById('boardPlayerTop'),
+    boardPlayerBottom: document.getElementById('boardPlayerBottom'),
     firstBtn: document.getElementById('firstBtn'),
     prevBtn: document.getElementById('prevBtn'),
     playBtn: document.getElementById('playBtn'),
@@ -31,6 +33,31 @@
     detailEvalBefore: document.getElementById('detailEvalBefore'),
     detailEvalAfter: document.getElementById('detailEvalAfter'),
   };
+
+  function resolvePlayerInfo(result) {
+    const game = result?.game ?? {};
+    const headers = game.headers ?? {};
+    const white = (game.white ?? headers.White ?? 'Unknown').toString().trim() || 'Unknown';
+    const black = (game.black ?? headers.Black ?? 'Unknown').toString().trim() || 'Unknown';
+    const whiteElo = (headers.WhiteElo ?? game.whiteElo ?? '').toString().trim();
+    const blackElo = (headers.BlackElo ?? game.blackElo ?? '').toString().trim();
+    return {
+      white,
+      black,
+      whiteElo: whiteElo.length > 0 ? whiteElo : '-',
+      blackElo: blackElo.length > 0 ? blackElo : '-',
+    };
+  }
+
+  function renderBoardPlayers(result) {
+    if (!elements.boardPlayerTop || !elements.boardPlayerBottom) {
+      return;
+    }
+
+    const playerInfo = resolvePlayerInfo(result);
+    elements.boardPlayerTop.textContent = `${playerInfo.black} (${playerInfo.blackElo})`;
+    elements.boardPlayerBottom.textContent = `${playerInfo.white} (${playerInfo.whiteElo})`;
+  }
 
   function getJobIdFromPath() {
     const match = window.location.pathname.match(/^\/analysis\/([a-zA-Z0-9-]+)$/);
@@ -63,6 +90,7 @@
     state.analysis = result;
     state.viewerColor = EVAL_PERSPECTIVE;
     state.selectedIndex = result.moves.length > 0 ? 0 : -1;
+    renderBoardPlayers(result);
 
     if (typeof result.pgn === 'string' && result.pgn.trim().length > 0) {
       elements.pgnInput.value = result.pgn;

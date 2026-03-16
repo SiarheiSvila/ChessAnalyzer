@@ -1,0 +1,16 @@
+services:
+  chess-analyzer:
+    image: siarheisvila/chess-analyzer:latest
+    container_name: chess-analyzer
+    restart: unless-stopped
+    ports:
+      - "80:3000"
+    environment:
+      PORT: 3000
+      STOCKFISH_PATH: /usr/games/stockfish
+      ANALYSIS_STORAGE_DIR: /app/storage/local/analyses
+    volumes:
+      - chess_analyzer_data:/app/storage/local/analyses
+
+volumes:
+  chess_analyzer_data:

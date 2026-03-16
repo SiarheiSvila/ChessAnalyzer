@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
 
 import { AppError } from '../shared/errors/AppError';
 import type { AnalysisResultStore, PersistedAnalysisRecord } from './AnalysisResultStore';
@@ -81,6 +81,53 @@ export class LocalAnalysisResultStore implements AnalysisResultStore {
       }
 
       throw new AppError('Failed to read analysis from local storage.', 'STORAGE_READ_ERROR', {
+        jobId,
+        error,
+      });
+    }
+  }
+
+  public async listAll(): Promise<PersistedAnalysisRecord[]> {
+    await mkdir(this.baseDir, { recursive: true });
+
+    const entries = await readdir(this.baseDir, { withFileTypes: true });
+    const files = entries.filter((entry) => entry.isFile() && entry.name.endsWith('.json'));
+
+    const records = await Promise.all(
+      files.map(async (entry) => {
+        const filePath = path.join(this.baseDir, entry.name);
+
+        try {
+          const raw = await readFile(filePath, 'utf-8');
+          const parsed = JSON.parse(raw) as unknown;
+          if (!isPersistedAnalysisRecord(parsed)) {
+            return undefined;
+          }
+
+          return parsed;
+        } catch {
+          return undefined;
+        }
+      }),
+    );
+
+    return records.filter((record): record is PersistedAnalysisRecord => record !== undefined);
+  }
+
+  public async deleteByJobId(jobId: string): Promise<boolean> {
+    assertSafeJobId(jobId);
+
+    const filePath = this.getFilePath(jobId);
+
+    try {
+      await unlink(filePath);
+      return true;
+    } catch (error) {
+      if (isObject(error) && 'code' in error && error.code === 'ENOENT') {
+        return false;
+      }
+
+      throw new AppError('Failed to delete analysis from local storage.', 'STORAGE_DELETE_ERROR', {
         jobId,
         error,
       });

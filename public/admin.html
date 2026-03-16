@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess Analyzer Admin</title>
+    <link rel="stylesheet" href="/admin.css" />
+  </head>
+  <body>
+    <main class="admin-layout">
+      <header class="admin-header">
+        <h1>Game Admin</h1>
+        <p>Stored analyzed games sorted by date.</p>
+      </header>
+
+      <section class="admin-panel">
+        <div class="table-head">
+          <span>Players</span>
+          <span>Result</span>
+          <span>Moves</span>
+          <span>Date</span>
+          <span></span>
+        </div>
+        <div id="gamesList" class="table-body"></div>
+      </section>
+    </main>
+
+    <script src="/admin.js"></script>
+  </body>
+</html>

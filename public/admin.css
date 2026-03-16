@@ -1,0 +1,149 @@
+:root {
+  color-scheme: light dark;
+  font-family: Inter, Segoe UI, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #1f2327;
+  color: #f1f5f9;
+}
+
+.admin-layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.admin-header p {
+  margin: 6px 0 14px;
+  color: #94a3b8;
+}
+
+.admin-panel {
+  border: 1px solid #374151;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #2b3137;
+}
+
+.table-head,
+.table-row {
+  display: grid;
+  grid-template-columns: 2.4fr 0.9fr 0.7fr 1fr 0.8fr;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+}
+
+.table-head {
+  background: #272d33;
+  color: #cbd5e1;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.table-row {
+  border-top: 1px solid #3a4148;
+}
+
+.players {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid #64748b;
+}
+
+.dot.white {
+  background: #f8fafc;
+}
+
+.dot.black {
+  background: #0f172a;
+}
+
+.result {
+  font-weight: 700;
+}
+
+.result.win {
+  color: #84cc16;
+}
+
+.result.loss {
+  color: #ef4444;
+}
+
+.result.draw {
+  color: #f59e0b;
+}
+
+.review-btn {
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #4b5563 0%, #374151 100%);
+  color: #f8fafc;
+  cursor: pointer;
+  padding: 9px 12px;
+  font-weight: 600;
+}
+
+.review-btn:hover {
+  filter: brightness(1.08);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-btn {
+  border: 1px solid #7f1d1d;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #991b1b 0%, #7f1d1d 100%);
+  color: #f8fafc;
+  cursor: pointer;
+  padding: 9px 12px;
+  font-weight: 600;
+}
+
+.delete-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.empty {
+  padding: 18px 14px;
+  color: #94a3b8;
+}
