@@ -135,6 +135,66 @@ describe('Phase7 persistent storage integration', () => {
     }
   });
 
+  it('returns black viewer preference when configured player matches black side', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'chessnpm-phase7-viewer-'));
+    const previousAdminPlayer = process.env.ADMIN_PLAYER_NAME;
+
+    try {
+      process.env.ADMIN_PLAYER_NAME = 'BlackHero';
+
+      const store = new LocalAnalysisResultStore(tempDir);
+      const manager = new AnalysisJobManager(
+        async () => ({
+          game: {
+            headers: {
+              Event: 'Phase7 viewer test',
+              White: 'WhiteHero',
+              Black: 'BlackHero',
+              Result: '0-1',
+            },
+          },
+          settings: {
+            depth: 8,
+            deepDepth: 14,
+            deepReanalyzedPlies: 0,
+            cache: { hits: 0, misses: 0, size: 0 },
+          },
+          moves: [],
+          summary: {
+            accuracyWhite: 99,
+            accuracyBlack: 99,
+            counts: {
+              white: { best: 0, excellent: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 },
+              black: { best: 0, excellent: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 },
+            },
+            criticalMoments: 0,
+          },
+        }),
+        undefined,
+        { analysisResultStore: store },
+      );
+
+      const app = createApp(manager, store);
+      const createResponse = await request(app).post('/api/analyze').send({ pgn: '1. e4 e5' });
+      assert.equal(createResponse.status, 202);
+
+      const jobId = createResponse.body.jobId as string;
+      await waitForCompletion(app, jobId);
+
+      const response = await request(app).get(`/api/analysis/${jobId}`);
+      assert.equal(response.status, 200);
+      assert.equal(response.body.viewer.playerColor, 'black');
+      assert.equal(response.body.viewer.boardFlipped, true);
+    } finally {
+      if (previousAdminPlayer === undefined) {
+        delete process.env.ADMIN_PLAYER_NAME;
+      } else {
+        process.env.ADMIN_PLAYER_NAME = previousAdminPlayer;
+      }
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it('returns 404 for unknown persisted analysis', async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), 'chessnpm-phase7-missing-'));
 

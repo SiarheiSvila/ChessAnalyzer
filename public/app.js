@@ -71,11 +71,13 @@
 
     const bestLine = Array.isArray(coaching.bestLine) ? coaching.bestLine.filter((value) => typeof value === 'string') : [];
     const playedLine = Array.isArray(coaching.playedLine) ? coaching.playedLine.filter((value) => typeof value === 'string') : [];
+    const threatLine = Array.isArray(coaching.threatLine) ? coaching.threatLine.filter((value) => typeof value === 'string') : [];
 
     return {
       value: coaching,
       bestLine,
       playedLine,
+      threatLine,
     };
   }
 
@@ -90,16 +92,12 @@
     return typeof label === 'string' ? label.trim().toLowerCase() : '';
   }
 
-  function buildThreatLine(move, playedLine) {
-    if (!Array.isArray(playedLine) || playedLine.length === 0) {
-      return [];
+  function buildThreatLine(threatLine) {
+    if (Array.isArray(threatLine) && threatLine.length > 0) {
+      return threatLine;
     }
 
-    if (playedLine[0] === move.uciMove) {
-      return playedLine.slice(1);
-    }
-
-    return playedLine;
+    return [];
   }
 
   function squareToCoords(square) {
@@ -298,13 +296,10 @@
     const coaching = coachingData?.value;
     const hasCoaching = Boolean(coaching);
     const bestLine = coachingData?.bestLine ?? [];
-    const playedLine = coachingData?.playedLine ?? [];
-    const threatLine = buildThreatLine(move, playedLine);
+    const threatLineFromPayload = coachingData?.threatLine ?? [];
+    const threatLine = buildThreatLine(threatLineFromPayload);
     const totalBestSteps = hasCoaching ? coachingTotalSteps(bestLine, coaching.sequenceLength) : 0;
-    const threatSequenceLength = Number.isInteger(coaching?.sequenceLength)
-      ? Math.max(0, coaching.sequenceLength - 1)
-      : threatLine.length;
-    const totalThreatSteps = hasCoaching ? coachingTotalSteps(threatLine, threatSequenceLength) : 0;
+    const totalThreatSteps = hasCoaching ? coachingTotalSteps(threatLine, threatLine.length) : 0;
     const normalizedLabel = normalizeMoveLabel(move.label);
     const isBadMove = coaching?.type === 'bad_move'
       || normalizedLabel === 'inaccuracy'
@@ -514,7 +509,11 @@
 
   function applyAnalysisResult(result, viewer) {
     state.analysis = result;
-    state.viewerColor = EVAL_PERSPECTIVE;
+    state.viewerColor = viewer?.playerColor === 'black'
+      ? 'b'
+      : viewer?.playerColor === 'white'
+        ? 'w'
+        : EVAL_PERSPECTIVE;
     state.selectedIndex = result.moves.length > 0 ? 0 : -1;
     state.boardFlipped = viewer?.boardFlipped === true;
     deactivateCoachingVisualization();
@@ -802,15 +801,13 @@
   }
 
   function updateEvalBar(move) {
-    const maxAbs = 1000;
-    const rawEval = window.UiHelpers.evalToNumberForPerspective(move.evalAfter, state.viewerColor, move.color);
-    const bounded = Math.max(-maxAbs, Math.min(maxAbs, rawEval));
+    const whiteShare = window.UiHelpers.whiteSharePercent(move.evalAfter, move.color);
+    const evalBar = elements.evalBarFill?.parentElement;
 
-    // Align bar with the player on bottom: invert when board is flipped (black on bottom).
-    const whitePerspectivePercentage = ((maxAbs + bounded) / (2 * maxAbs)) * 100;
-    const percentage = state.boardFlipped ? 100 - whitePerspectivePercentage : whitePerspectivePercentage;
-
-    elements.evalBarFill.style.setProperty('--eval-percent', `${percentage}%`);
+    elements.evalBarFill.style.setProperty('--white-share-percent', `${whiteShare}%`);
+    if (evalBar) {
+      evalBar.classList.toggle('white-top', state.boardFlipped);
+    }
   }
 
   function toggleBoardOrientation() {

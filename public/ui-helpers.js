@@ -65,6 +65,12 @@
     return evalToNumber(normalizeScoreForPerspective(score, perspectiveColor, moverColor));
   }
 
+  function whiteSharePercent(score, moverColor, maxAbs = 1000) {
+    const rawEval = evalToNumberForPerspective(score, 'w', moverColor);
+    const bounded = Math.max(-maxAbs, Math.min(maxAbs, rawEval));
+    return ((maxAbs + bounded) / (2 * maxAbs)) * 100;
+  }
+
   function boardFromFen(fen) {
     const [piecePlacement] = fen.split(' ');
     const rows = piecePlacement.split('/');
@@ -148,6 +154,7 @@
     formatEval,
     evalToNumber,
     evalToNumberForPerspective,
+    whiteSharePercent,
     normalizeScoreForPerspective,
     boardFromFen,
     buildMoveRows,

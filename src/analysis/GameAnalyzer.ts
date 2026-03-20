@@ -12,6 +12,7 @@ import {
   summarizeBySide,
 } from './Scoring';
 import type { AnalyzedMove, RawAnalysisResult } from './dto/AnalysisResult';
+import type { UciScore } from '../engine/uci/UciTypes';
 
 export interface AnalyzeGameOptions {
   depth?: number;
@@ -128,11 +129,17 @@ export class GameAnalyzer {
   ): Promise<AnalyzedMove> {
     const multiPv = coachingOptions?.enableCoaching ? coachingOptions.coachingMultiPv : undefined;
     const evalBefore = await this.positionEvaluator.evaluateFen(ply.fenBefore, { depth, multiPv });
-    const evalAfter = await this.positionEvaluator.evaluateFen(ply.fenAfter, { depth });
+    const evalAfter = await this.positionEvaluator.evaluateFen(ply.fenAfter, { depth, multiPv });
     const bestAfterFen = this.applyUciMove(ply.fenBefore, evalBefore.bestMove);
     const evalBestAfter = await this.positionEvaluator.evaluateFen(bestAfterFen, { depth });
 
-    const evalBeforeForMover = evalBefore.info.score ?? { kind: 'cp' as const, value: 0 };
+    const evalBeforeScore: UciScore = evalBefore.info.score ?? { kind: 'cp', value: 0 };
+    const evalBeforeForMover: UciScore = ply.color === 'w'
+      ? evalBeforeScore
+      : {
+          kind: evalBeforeScore.kind,
+          value: -evalBeforeScore.value,
+        };
     const evalAfterForMover = {
       kind: 'cp' as const,
       value: moverPerspectiveAfterMove(evalAfter.info.score ?? { kind: 'cp', value: 0 }),
@@ -173,9 +180,16 @@ export class GameAnalyzer {
     if (coachingOptions?.enableCoaching) {
       const bestLine = evalBefore.info.pv ?? [];
       const playedLine = this.buildPlayedLineFromIndex(coachingOptions.plies, ply.ply);
+      // Threat line: engine's best continuation from fenAfter (how the opponent punishes the mistake).
+      // Mirrors how bestLine comes from evalBefore — both now evaluated at the same depth and multiPv.
+      const threatLine = (evalAfter.info.pv ?? []).slice(0, GameAnalyzer.COACHING_PLAYED_LINE_MAX_MOVES);
       const coaching = this.coachingClassifier.classifyMove(analyzedMove, bestLine, playedLine);
       if (coaching) {
-        analyzedMove.coaching = coaching;
+        analyzedMove.coaching = {
+          ...coaching,
+          threatLine,
+          sequenceLength: Math.max(coaching.sequenceLength, threatLine.length),
+        };
       }
     }
 

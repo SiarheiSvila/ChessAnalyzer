@@ -12,11 +12,14 @@ describe('UI helpers', () => {
     ];
 
     const rows = helpers.buildMoveRows(moves);
-    assert.equal(rows.length, moves.length);
+    assert.equal(rows.length, Math.ceil(moves.length / 2));
 
     rows.forEach((row) => {
-      assert.ok(typeof row.evalText === 'string' && row.evalText.length > 0);
-      assert.ok(row.rowText.includes(row.evalText));
+      const candidates = [row.white, row.black].filter(Boolean);
+      candidates.forEach((moveRow) => {
+        assert.ok(typeof moveRow.evalText === 'string' && moveRow.evalText.length > 0);
+        assert.ok(moveRow.rowText.includes(moveRow.evalText));
+      });
     });
   });
 
@@ -77,14 +80,26 @@ describe('UI helpers', () => {
 
     const whiteRows = helpers.buildMoveRows(moves, 'w');
     const blackRows = helpers.buildMoveRows(moves, 'b');
-    assert.equal(whiteRows[0].evalText, '+0.35');
-    assert.equal(whiteRows[1].evalText, '+0.10');
-    assert.equal(blackRows[0].evalText, '-0.35');
-    assert.equal(blackRows[1].evalText, '-0.10');
+    assert.equal(whiteRows[0].white.evalText, '+0.35');
+    assert.equal(whiteRows[0].black.evalText, '+0.10');
+    assert.equal(blackRows[0].white.evalText, '-0.35');
+    assert.equal(blackRows[0].black.evalText, '-0.10');
 
     const whiteStep = helpers.stepView(moves[0], 0, 2, 'w');
     const blackStep = helpers.stepView(moves[0], 0, 2, 'b');
     assert.equal(whiteStep.evalDisplay, 'Eval: +0.35');
     assert.equal(blackStep.evalDisplay, 'Eval: -0.35');
+  });
+
+  it('computes white share percent for evaluation bar from white perspective', () => {
+    const equalShare = helpers.whiteSharePercent({ kind: 'cp', value: 0 }, 'w');
+    const whiteWinningAfterWhiteMove = helpers.whiteSharePercent({ kind: 'cp', value: 200 }, 'w');
+    const whiteWinningAfterBlackMove = helpers.whiteSharePercent({ kind: 'cp', value: -200 }, 'b');
+    const blackWinningAfterWhiteMove = helpers.whiteSharePercent({ kind: 'cp', value: -200 }, 'w');
+
+    assert.equal(equalShare, 50);
+    assert.equal(whiteWinningAfterWhiteMove, 60);
+    assert.equal(whiteWinningAfterBlackMove, 60);
+    assert.equal(blackWinningAfterWhiteMove, 40);
   });
 });

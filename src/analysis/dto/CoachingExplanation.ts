@@ -64,6 +64,10 @@ export interface CoachingExplanation {
   playedLine: string[];
   // e.g., ['a2a3', 'd2d4', ...] if a2a3 was played
 
+  // Engine threat/punishment line after the played move (from fenAfter)
+  threatLine?: string[];
+  // e.g., ['d8h4', 'g2g3', 'h4e4'] after a weakening move
+
   // Number of moves in comparison (usually 3-5)
   sequenceLength: number;
 
