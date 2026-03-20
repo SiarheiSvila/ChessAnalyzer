@@ -40,5 +40,20 @@ describe('Phase5 UI integration', () => {
     assert.ok(response.text.includes('id="evalDisplay"'));
     assert.ok(response.text.includes('id="prevBtn"'));
     assert.ok(response.text.includes('id="nextBtn"'));
+    assert.ok(response.text.includes('id="coachingPanel"'));
+    assert.ok(response.text.includes('id="coachingToggleBtn"'));
+    assert.ok(response.text.includes('id="coachingThreatBtn"'));
+    assert.ok(response.text.includes('id="coachingPrevBtn"'));
+    assert.ok(response.text.includes('id="coachingNextBtn"'));
+    assert.ok(response.text.includes('id="coachingReason"'));
+    assert.ok(response.text.includes('id="coachingScoreGap"'));
+    assert.ok(response.text.includes('id="coachingSequence"'));
+    assert.ok(response.text.includes('id="coachingTags"'));
+
+    const moveListIndex = response.text.indexOf('id="moveList"');
+    const coachingPanelIndex = response.text.indexOf('id="coachingPanel"');
+    assert.ok(moveListIndex >= 0);
+    assert.ok(coachingPanelIndex >= 0);
+    assert.ok(coachingPanelIndex < moveListIndex);
   });
 });

@@ -388,3 +388,113 @@ Acceptance criteria:
 - Coach-like natural language explanations
 - Cloud workers for concurrent large-scale analysis
 - User history and saved reports
+
+## Coaching
+Goal: implement enhanced coaching (Plan B) so critical moves include concrete winning/losing continuation sequences and clear "why good/bad" explanations.
+
+### Coaching Phase 1 — MultiPV engine foundation
+**Goal:** Enable multiple principal variations for coaching-grade comparison.
+
+Deliverables:
+- Extend UCI analyze options to support `multiPv`.
+- Configure engine with `setoption name MultiPV value N` for coaching analysis paths.
+- Return structured multiple lines per position (ranked by `multipv`, score, PV).
+- Keep default game-wide flow on fast single-PV to control runtime.
+
+Phase tests:
+- Unit: parse and group `info ... multipv ... pv ...` lines by PV rank.
+- Unit: ensure fallback to single-PV when engine does not emit complete MultiPV set.
+- Integration: evaluate one FEN with `multiPv=3` and assert 3 ranked candidate lines.
+
+Acceptance criteria:
+- Engine adapter can return deterministic ranked candidate lines for one position.
+- Existing single-PV analysis behavior remains unchanged when `multiPv` is omitted.
+- Test gate: MultiPV parser + integration tests pass.
+
+### Coaching Phase 2 — Critical move coaching model
+**Goal:** Convert MultiPV output into actionable continuation explanations.
+
+Deliverables:
+- Add coaching DTO on analyzed move (e.g., `coaching.type`, `reasonCodes`, `playedLine`, `bestLine`, `scoreGapCp`).
+- For bad moves: compute punishment sequence from move position and best alternative sequence from pre-move position.
+- For good moves: compute conversion/maintenance sequence showing how advantage is kept or increased.
+- Add mate-priority logic so mate swings produce explicit tactical reason codes.
+
+Phase tests:
+- Unit: reason classification for `bad_move` vs `good_move` vs `neutral` using CPL and score gap.
+- Unit: mate-transition cases produce expected reason codes and message templates.
+- Unit: continuation builder outputs bounded sequence length and stable shape.
+- Integration: fixed PGN fixture snapshots include coaching payload on critical plies.
+
+Acceptance criteria:
+- Every critical move has a non-empty coaching payload with at least one continuation line.
+- Non-critical moves can omit coaching payload or include lightweight summary without regressions.
+- Test gate: coaching DTO snapshot tests are stable across repeated runs.
+
+### Coaching Phase 3 — API and persistence integration
+**Goal:** Expose and persist coaching data without breaking current clients.
+
+Deliverables:
+- Include coaching payload in analysis result contracts and persisted job files.
+- Preserve backward compatibility for existing response fields.
+- Optional on-demand endpoint for deep coaching recalculation by `jobId` + `ply` (for future performance scaling).
+
+Phase tests:
+- API integration: `GET /api/analyze/:jobId/result` includes coaching object for flagged plies.
+- API integration: persisted/reloaded analysis retains identical coaching payload.
+- Contract tests: old clients reading legacy fields continue to function.
+
+Acceptance criteria:
+- Coaching fields are retrievable both from in-memory and persisted analyses.
+- No breaking schema changes for existing consumers.
+- Test gate: API compatibility and persistence tests pass.
+
+### Coaching Phase 4 — UI coaching panel
+**Goal:** Present coaching as board-first visualization (not move-list text) for why a move is good or bad.
+
+Deliverables:
+- Add a dedicated coaching control block with a `Show best moves` button for the selected move.
+- Visualize coaching sequence directly on board (arrows/step-through overlay for best and played continuation).
+- Keep coaching visualization separate from existing move list (no insertion of coaching lines into main game move list).
+- Provide lightweight side summary in details panel (score gap + reason tags), while sequence itself is board-driven.
+- Graceful empty/disabled state when selected move has no coaching payload.
+
+UI/UX constraints (minimal but informative):
+- Place coaching controls only in the existing Move Details panel; do not add coaching controls inside Move List.
+- Use a compact control row: primary action `Show best moves`, secondary `Hide` state when active.
+- Show only compact text metadata (`reason`, `scoreGap`, `sequenceLength`) and keep full continuation visualized on board.
+- Limit simultaneous coaching overlays to two lines (played vs best) to prevent board clutter.
+- Automatically clear coaching overlay when selected move changes; keep navigation behavior unchanged.
+- Reuse existing move-quality color language and avoid introducing new visual themes.
+- On narrow screens, keep same behavior (controls remain in details panel; no extra board control rows).
+
+Phase tests:
+- UI unit/component: `Show best moves` appears and is enabled only when coaching payload exists.
+- UI unit/component: activating coaching renders board overlay/sequence and does not mutate main move list rows.
+- UI unit/component: missing coaching payload keeps control disabled and renders placeholder state without errors.
+- E2E: navigate to a critical move, click `Show best moves`, and verify board visualization updates with current move.
+- E2E: moving to next/previous move resets coaching overlay state without breaking autoplay or keyboard navigation.
+
+Acceptance criteria:
+- User can understand "why" from board visualization plus compact coaching summary.
+- Coaching sequence is fully separated from existing game move list representation.
+- No regressions in move navigation, chart updates, and board rendering.
+- Test gate: Phase 5 UI tests extended with coaching assertions pass.
+
+### Coaching Phase 5 — quality tuning and performance guardrails
+**Goal:** keep coaching strong while preserving acceptable analysis runtime.
+
+Deliverables:
+- Run deep coaching only on critical/high-CPL plies by threshold.
+- Add configurable caps (`maxCoachingPlies`, `coachingDepth`, `coachingMultiPv`).
+- Tune reason thresholds using fixture games and compare output stability.
+
+Phase tests:
+- Performance integration: runtime impact stays within defined budget versus baseline Phase 6 flow.
+- Soak integration: repeated analyses with coaching enabled show no queue deadlocks or engine leaks.
+- Regression snapshots: coaching reason codes and sequence shape remain deterministic for fixtures.
+
+Acceptance criteria:
+- Coaching mode remains within agreed runtime envelope for typical 40-move games.
+- Deterministic coaching outputs for fixed fixtures under fixed settings.
+- Test gate: performance + soak + snapshot suites pass in CI.

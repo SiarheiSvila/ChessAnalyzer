@@ -10,6 +10,8 @@ import { JobStore } from './JobStore';
 export interface AnalysisRequest {
   pgn: string;
   depth?: number;
+  enableCoaching?: boolean;
+  coachingMultiPv?: number;
 }
 
 export type AnalysisRunner = (

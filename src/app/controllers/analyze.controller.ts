@@ -9,6 +9,12 @@ interface AnalyzeRequestBody {
   pgn?: unknown;
   settings?: {
     depth?: unknown;
+    enableCoaching?: unknown;
+    coachingMultiPv?: unknown;
+    coaching?: {
+      enabled?: unknown;
+      multiPv?: unknown;
+    };
   };
   synchronous?: unknown;
 }
@@ -39,6 +45,30 @@ function asValidDepth(input: unknown): number | undefined {
   }
 
   if (typeof input !== 'number' || Number.isNaN(input) || input < 1 || input > 40) {
+    return undefined;
+  }
+
+  return Math.floor(input);
+}
+
+function asValidBoolean(input: unknown): boolean | undefined {
+  if (input === undefined) {
+    return undefined;
+  }
+
+  if (typeof input !== 'boolean') {
+    return undefined;
+  }
+
+  return input;
+}
+
+function asValidMultiPv(input: unknown): number | undefined {
+  if (input === undefined) {
+    return undefined;
+  }
+
+  if (typeof input !== 'number' || Number.isNaN(input) || input < 1 || input > 8) {
     return undefined;
   }
 
@@ -136,11 +166,17 @@ export class AnalyzeController {
     const body = request.body as AnalyzeRequestBody;
     const pgn = typeof body.pgn === 'string' ? body.pgn.trim() : '';
     const depth = asValidDepth(body.settings?.depth);
+    const coachingEnabledInput = body.settings?.coaching?.enabled ?? body.settings?.enableCoaching;
+    const coachingMultiPvInput = body.settings?.coaching?.multiPv ?? body.settings?.coachingMultiPv;
+    const enableCoaching = asValidBoolean(coachingEnabledInput);
+    const coachingMultiPv = asValidMultiPv(coachingMultiPvInput);
     const synchronous = body.synchronous === true;
 
     console.info('[AnalyzeController] Create analysis request', {
       synchronous,
       depth,
+      enableCoaching,
+      coachingMultiPv,
       pgnLength: pgn.length,
     });
 
@@ -168,9 +204,34 @@ export class AnalyzeController {
       return;
     }
 
+    if (coachingEnabledInput !== undefined && enableCoaching === undefined) {
+      response.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Field `settings.enableCoaching` (or `settings.coaching.enabled`) must be a boolean.',
+        },
+      });
+      return;
+    }
+
+    if (coachingMultiPvInput !== undefined && coachingMultiPv === undefined) {
+      response.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Field `settings.coachingMultiPv` (or `settings.coaching.multiPv`) must be a number between 1 and 8.',
+        },
+      });
+      return;
+    }
+
     if (synchronous) {
       try {
-        const result = await this.jobManager.runSynchronous({ pgn, depth });
+        const result = await this.jobManager.runSynchronous({
+          pgn,
+          depth,
+          enableCoaching,
+          coachingMultiPv,
+        });
         console.info('[AnalyzeController] Synchronous analysis completed', {
           moves: result.moves.length,
         });
@@ -191,7 +252,12 @@ export class AnalyzeController {
       return;
     }
 
-    const { jobId } = this.jobManager.createJob({ pgn, depth });
+    const { jobId } = this.jobManager.createJob({
+      pgn,
+      depth,
+      enableCoaching,
+      coachingMultiPv,
+    });
     console.info('[AnalyzeController] Asynchronous job created', { jobId });
     response.status(202).json({ jobId });
   };

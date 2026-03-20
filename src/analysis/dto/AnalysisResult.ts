@@ -1,5 +1,6 @@
 import type { UciScore } from '../../engine/uci/UciTypes';
 import type { MoveLabel } from '../Scoring';
+import type { CoachingExplanation } from './CoachingExplanation';
 
 export interface RawMoveAnalysis {
   ply: number;
@@ -21,6 +22,7 @@ export interface AnalyzedMove extends RawMoveAnalysis {
   isCritical: boolean;
   criticalReasons: string[];
   evalSwingCp: number;
+  coaching?: CoachingExplanation;
 }
 
 export interface RawAnalysisResult {

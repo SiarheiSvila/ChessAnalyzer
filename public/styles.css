@@ -515,6 +515,75 @@ button {
   font-size: 0.92rem;
 }
 
+.coaching-panel {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #374151;
+}
+
+.coaching-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.coaching-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.coaching-toggle-btn {
+  width: auto;
+  min-width: 132px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  background: linear-gradient(180deg, #334155 0%, #1f2937 100%);
+  color: #e5e7eb;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.coaching-toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.coaching-step-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  justify-content: center;
+}
+
+.coaching-step-btn {
+  width: 34px;
+  min-width: 34px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  background: linear-gradient(180deg, #334155 0%, #1f2937 100%);
+  color: #e5e7eb;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.coaching-step-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.coaching-empty {
+  color: #9ca3af;
+  font-size: 0.86rem;
+  margin-top: 2px;
+}
+
 @media (max-width: 1300px) {
   :root {
     --cell-size: 58px;
@@ -531,25 +600,35 @@ button {
   }
 
   .layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     min-height: auto;
   }
 
-  .center-column {
+  .left-column,
+  .center-column,
+  .right-column {
+    display: contents;
+  }
+
+  .details-panel {
     order: 1;
   }
 
-  .right-column {
+  .board-panel {
     order: 2;
   }
 
-  .left-column {
+  .chart-panel {
     order: 3;
   }
 
-  .left-column,
-  .right-column {
-    height: auto;
+  .moves-panel {
+    order: 4;
+  }
+
+  .input-panel {
+    order: 5;
   }
 
   .board-panel {

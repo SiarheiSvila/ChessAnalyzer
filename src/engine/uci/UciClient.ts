@@ -2,7 +2,7 @@ import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { EOL } from 'node:os';
 
 import { EngineError } from '../../shared/errors/EngineError';
-import { parseBestMoveLine, parseInfoLine } from './UciProtocol';
+import { buildRankedCandidateLines, parseBestMoveLine, parseInfoLine } from './UciProtocol';
 import type { UciAnalyzeOptions, UciClientOptions, UciEvaluation, UciInfo } from './UciTypes';
 
 type PendingCommand = {
@@ -133,8 +133,15 @@ export class UciClient {
     }
 
     const timeoutMs = options.timeoutMs ?? this.options.commandTimeoutMs;
+    const multiPv = Math.max(1, Math.floor(options.multiPv ?? 1));
 
     this.infoLines = [];
+    await this.sendAndWait(
+      `setoption name MultiPV value ${multiPv}`,
+      (line) => line === 'readyok',
+      timeoutMs,
+      true,
+    );
     await this.sendAndWait(`position fen ${fen}`, (line) => line === 'readyok', timeoutMs, true);
 
     const goCommand = options.depth
@@ -150,7 +157,8 @@ export class UciClient {
       throw new EngineError('Could not parse bestmove line', 'UCI_PARSE_BESTMOVE_ERROR', { line: bestMoveLine });
     }
 
-    const chosenInfo = this.pickBestInfo(this.infoLines);
+    const candidateLines = buildRankedCandidateLines(this.infoLines, multiPv);
+    const chosenInfo = candidateLines[0]?.info ?? this.pickBestInfo(this.infoLines);
     if (!chosenInfo) {
       throw new EngineError('No info lines were parsed from engine output', 'UCI_MISSING_INFO_LINES');
     }
@@ -159,6 +167,7 @@ export class UciClient {
       bestMove: parsedBestMove.bestMove,
       ponder: parsedBestMove.ponder,
       info: chosenInfo,
+      candidateLines,
     };
   }
 

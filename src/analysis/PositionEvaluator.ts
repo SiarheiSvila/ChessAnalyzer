@@ -60,6 +60,7 @@ export class PositionEvaluator {
   private cacheKey(fen: string, options: PositionEvaluateOptions): string {
     const depthPart = options.depth ?? 'd?';
     const moveTimePart = options.moveTimeMs ?? 't?';
-    return `${fen}|depth:${depthPart}|movetime:${moveTimePart}`;
+    const multiPvPart = options.multiPv ?? 'm1';
+    return `${fen}|depth:${depthPart}|movetime:${moveTimePart}|multipv:${multiPvPart}`;
   }
 }

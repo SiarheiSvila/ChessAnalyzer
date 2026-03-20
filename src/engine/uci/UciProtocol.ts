@@ -1,4 +1,4 @@
-import type { UciInfo, UciScore } from './UciTypes';
+import type { UciCandidateLine, UciInfo, UciScore } from './UciTypes';
 
 const numberPattern = /^-?\d+$/;
 
@@ -102,4 +102,43 @@ export function parseInfoLine(line: string): UciInfo | undefined {
   }
 
   return info;
+}
+
+function rankValue(info: UciInfo): number {
+  return info.multipv ?? 1;
+}
+
+function depthValue(info: UciInfo): number {
+  return info.depth ?? -1;
+}
+
+export function buildRankedCandidateLines(infoLines: UciInfo[], expectedMultiPv?: number): UciCandidateLine[] {
+  if (infoLines.length === 0) {
+    return [];
+  }
+
+  const bestByRank = new Map<number, UciInfo>();
+
+  for (const line of infoLines) {
+    const rank = rankValue(line);
+    const existing = bestByRank.get(rank);
+
+    if (!existing || depthValue(line) >= depthValue(existing)) {
+      bestByRank.set(rank, line);
+    }
+  }
+
+  const ranked = [...bestByRank.entries()]
+    .sort((left, right) => left[0] - right[0])
+    .map(([rank, info]) => ({ rank, info }));
+
+  if (!expectedMultiPv || expectedMultiPv <= 1) {
+    return ranked.slice(0, 1);
+  }
+
+  if (ranked.length >= expectedMultiPv) {
+    return ranked.slice(0, expectedMultiPv);
+  }
+
+  return ranked.slice(0, 1);
 }

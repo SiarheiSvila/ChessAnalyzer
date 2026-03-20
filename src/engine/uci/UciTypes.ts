@@ -20,16 +20,23 @@ export interface UciInfo {
   raw: string;
 }
 
+export interface UciCandidateLine {
+  rank: number;
+  info: UciInfo;
+}
+
 export interface UciEvaluation {
   bestMove: string;
   ponder?: string;
   info: UciInfo;
+  candidateLines?: UciCandidateLine[];
 }
 
 export interface UciAnalyzeOptions {
   depth?: number;
   moveTimeMs?: number;
   timeoutMs?: number;
+  multiPv?: number;
 }
 
 export interface UciClientOptions {

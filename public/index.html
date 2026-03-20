@@ -38,6 +38,24 @@
           <div id="detailBest">Best Move: -</div>
           <div id="detailEvalBefore">Eval Before: -</div>
           <div id="detailEvalAfter">Eval After: -</div>
+          <div id="coachingPanel" class="coaching-panel">
+            <div class="coaching-header-row">
+              <strong>Coaching</strong>
+            </div>
+            <div class="coaching-action-row">
+              <button id="coachingToggleBtn" class="coaching-toggle-btn" type="button" disabled>Show best moves</button>
+              <button id="coachingThreatBtn" class="coaching-toggle-btn" type="button" disabled>Show threats</button>
+            </div>
+            <div class="coaching-step-controls">
+              <button id="coachingPrevBtn" class="coaching-step-btn" type="button" disabled aria-label="Previous coaching move">&lt;</button>
+              <button id="coachingNextBtn" class="coaching-step-btn" type="button" disabled aria-label="Next coaching move">&gt;</button>
+            </div>
+            <div id="coachingReason">Reason: -</div>
+            <div id="coachingScoreGap">Score Gap: -</div>
+            <div id="coachingSequence">Sequence: -</div>
+            <div id="coachingTags">Tags: -</div>
+            <div id="coachingEmpty" class="coaching-empty">No coaching data for selected move.</div>
+          </div>
         </section>
       </div>
 
@@ -78,7 +96,7 @@
       </div>
     </main>
 
-    <script src="/ui-helpers.js"></script>
-    <script src="/app.js"></script>
+    <script src="/ui-helpers.js?v=20260320-coaching"></script>
+    <script src="/app.js?v=20260320-coaching"></script>
   </body>
 </html>

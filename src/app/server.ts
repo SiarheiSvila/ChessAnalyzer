@@ -31,6 +31,8 @@ const jobManager = new AnalysisJobManager(async (request, onProgress) => {
   await stockfishService.initialize();
   return analyzer.analyzePgn(request.pgn, {
     depth: request.depth,
+    enableCoaching: request.enableCoaching,
+    coachingMultiPv: request.coachingMultiPv,
     onProgress,
   });
 }, undefined, { analysisResultStore: analysisStore });
