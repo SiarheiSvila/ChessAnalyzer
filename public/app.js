@@ -152,6 +152,20 @@
     return row * 8 + file;
   }
 
+  function displayPositionFromSquare(square) {
+    const sourceIndex = boardIndexFromSquare(square);
+    if (sourceIndex < 0) {
+      return null;
+    }
+
+    const sourceRow = Math.floor(sourceIndex / 8);
+    const sourceCol = sourceIndex % 8;
+    const row = state.boardFlipped ? 7 - sourceRow : sourceRow;
+    const col = state.boardFlipped ? 7 - sourceCol : sourceCol;
+
+    return { row, col };
+  }
+
   function squaresFromUci(uciMove) {
     if (typeof uciMove !== 'string' || uciMove.length < 4) {
       return null;
@@ -191,7 +205,51 @@
     return '';
   }
 
-  function renderBoard(fen, highlightSquare, highlightFromSquare, highlightClass, bestMoveSquares) {
+  function appendArrowToOverlay(arrowOverlay, boardSize, cellSize, fromPosition, toPosition, opacityScale = 1) {
+    const fromX = (fromPosition.col + 0.5) * cellSize;
+    const fromY = (fromPosition.row + 0.5) * cellSize;
+    const toX = (toPosition.col + 0.5) * cellSize;
+    const toY = (toPosition.row + 0.5) * cellSize;
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const length = Math.hypot(dx, dy);
+    if (length < 1) {
+      return;
+    }
+
+    const ux = dx / length;
+    const uy = dy / length;
+    const px = -uy;
+    const py = ux;
+    const headLength = Math.min(Math.max(14, cellSize * 0.34), length * 0.62);
+    const headWidth = Math.max(11, cellSize * 0.30);
+    const headBaseX = toX - ux * headLength;
+    const headBaseY = toY - uy * headLength;
+    const gapToHead = -Math.max(0.5, cellSize * 0.01);
+    const shaftEndX = headBaseX - ux * gapToHead;
+    const shaftEndY = headBaseY - uy * gapToHead;
+    const leftX = headBaseX + px * (headWidth / 2);
+    const leftY = headBaseY + py * (headWidth / 2);
+    const rightX = headBaseX - px * (headWidth / 2);
+    const rightY = headBaseY - py * (headWidth / 2);
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', String(fromX));
+    line.setAttribute('y1', String(fromY));
+    line.setAttribute('x2', String(shaftEndX));
+    line.setAttribute('y2', String(shaftEndY));
+    line.setAttribute('stroke', `rgba(34, 197, 94, ${0.5 * opacityScale})`);
+    line.setAttribute('stroke-width', String(Math.max(3.2, cellSize * 0.11)));
+    line.setAttribute('stroke-linecap', 'butt');
+    arrowOverlay.appendChild(line);
+
+    const head = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    head.setAttribute('d', `M ${leftX} ${leftY} L ${toX} ${toY} L ${rightX} ${rightY} Q ${headBaseX} ${headBaseY} ${leftX} ${leftY} Z`);
+    head.setAttribute('fill', `rgba(34, 197, 94, ${0.5 * opacityScale})`);
+    arrowOverlay.appendChild(head);
+  }
+
+  function renderBoard(fen, highlightSquare, highlightFromSquare, highlightClass, bestMoveSquares, moveArrowSquares, correctMoveArrowSquares) {
     const squares = window.UiHelpers.boardFromFen(fen);
     const files = state.boardFlipped
       ? ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
@@ -245,6 +303,41 @@
 
       elements.board.appendChild(square);
     }
+
+    const hasPlayedArrow = Boolean(moveArrowSquares?.fromSquare && moveArrowSquares?.toSquare);
+    const hasCorrectArrow = Boolean(correctMoveArrowSquares?.fromSquare && correctMoveArrowSquares?.toSquare);
+    if (!hasPlayedArrow && !hasCorrectArrow) {
+      return;
+    }
+
+    const boardSize = elements.board.clientWidth || elements.board.offsetWidth;
+    const cellSize = boardSize / 8;
+    if (!Number.isFinite(cellSize) || cellSize <= 0) {
+      return;
+    }
+
+    const arrowOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    arrowOverlay.setAttribute('class', 'board-move-arrow');
+    arrowOverlay.setAttribute('viewBox', `0 0 ${boardSize} ${boardSize}`);
+    arrowOverlay.setAttribute('aria-hidden', 'true');
+
+    if (hasPlayedArrow) {
+      const fromPosition = displayPositionFromSquare(moveArrowSquares.fromSquare);
+      const toPosition = displayPositionFromSquare(moveArrowSquares.toSquare);
+      if (fromPosition && toPosition) {
+        appendArrowToOverlay(arrowOverlay, boardSize, cellSize, fromPosition, toPosition, 0.85);
+      }
+    }
+
+    if (hasCorrectArrow) {
+      const fromPosition = displayPositionFromSquare(correctMoveArrowSquares.fromSquare);
+      const toPosition = displayPositionFromSquare(correctMoveArrowSquares.toSquare);
+      if (fromPosition && toPosition) {
+        appendArrowToOverlay(arrowOverlay, boardSize, cellSize, fromPosition, toPosition, 1);
+      }
+    }
+
+    elements.board.appendChild(arrowOverlay);
   }
 
   function renderChart(moves, selectedIndex) {
@@ -483,10 +576,14 @@
     const playedMoveSquares = squaresFromUci(move.uciMove);
     const landingSquare = playedMoveSquares?.toSquare ?? landingSquareFromUci(move.uciMove);
     const landingClass = boardHighlightClassFromLabel(move.label);
+    const normalizedLabel = move.label?.trim().toLowerCase() ?? '';
     const hintLabels = new Set(['inaccuracy', 'mistake', 'blunder']);
-    const shouldShowBestMoveHint = move.label && hintLabels.has(move.label.trim().toLowerCase());
+    const isExcellentMove = normalizedLabel === 'excellent';
+    const shouldShowBestMoveHint = hintLabels.has(normalizedLabel);
     const highlightFromSquare = shouldShowBestMoveHint ? playedMoveSquares?.fromSquare ?? null : null;
     const bestMoveSquares = shouldShowBestMoveHint ? squaresFromUci(move.bestMove) : null;
+    const moveArrowSquares = (shouldShowBestMoveHint || isExcellentMove) ? playedMoveSquares ?? null : null;
+    const correctMoveArrowSquares = shouldShowBestMoveHint ? bestMoveSquares : null;
 
     elements.evalDisplay.textContent = view.evalDisplay;
     elements.detailSan.textContent = `SAN: ${view.details.san}`;
@@ -496,7 +593,15 @@
     elements.detailEvalBefore.textContent = `Eval Before: ${view.details.evalBefore}`;
     elements.detailEvalAfter.textContent = `Eval After: ${view.details.evalAfter}`;
 
-    renderBoard(move.fenAfter, landingSquare, highlightFromSquare, landingClass, bestMoveSquares);
+    renderBoard(
+      move.fenAfter,
+      landingSquare,
+      highlightFromSquare,
+      landingClass,
+      null,
+      moveArrowSquares,
+      correctMoveArrowSquares,
+    );
     renderMoveList(moves, state.selectedIndex);
     renderChart(moves, state.selectedIndex);
     updateEvalBar(move);
