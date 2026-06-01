@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:lichess.org)",
+      "WebSearch",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npx tsc *)",
+      "Bash(python3 -c \"import json,sys; moves=json.load\\(sys.stdin\\)['moves']; [print\\(i, m.get\\('evalAfter'\\)\\) for i,m in enumerate\\(moves\\) if m.get\\('evalAfter',{}\\).get\\('kind'\\)=='mate']\")",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); moves=data['moves']; [print\\(i, m.get\\('evalAfter'\\)\\) for i,m in enumerate\\(moves[-10:]\\)]\")",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(list\\(data.keys\\(\\)\\)\\)\")",
+      "Bash(python3 -c ' *)"
+    ]
+  }
+}

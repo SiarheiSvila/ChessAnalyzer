@@ -1,18 +1,4 @@
 (function () {
-  const unicodeMap = {
-    p: '♟',
-    r: '♜',
-    n: '♞',
-    b: '♝',
-    q: '♛',
-    k: '♚',
-    P: '♙',
-    R: '♖',
-    N: '♘',
-    B: '♗',
-    Q: '♕',
-    K: '♔',
-  };
 
   function normalizeColor(color) {
     return color === 'w' || color === 'b' ? color : null;
@@ -35,16 +21,27 @@
     };
   }
 
+  function decodeLegacyMate(score) {
+    if (score.kind !== 'cp' || Math.abs(score.value) < 90000) {
+      return score;
+    }
+    const sign = score.value > 0 ? 1 : -1;
+    const moves = Math.round((100000 - Math.abs(score.value)) / 1000);
+    return { kind: 'mate', value: sign * moves };
+  }
+
   function formatEval(score) {
     if (!score) {
       return '0.00';
     }
 
-    if (score.kind === 'mate') {
-      return score.value > 0 ? `#${score.value}` : `#-${Math.abs(score.value)}`;
+    const s = decodeLegacyMate(score);
+
+    if (s.kind === 'mate') {
+      return s.value >= 0 ? `M${s.value}` : `M-${Math.abs(s.value)}`;
     }
 
-    const value = score.value / 100;
+    const value = s.value / 100;
     const sign = value > 0 ? '+' : '';
     return `${sign}${value.toFixed(2)}`;
   }
@@ -54,11 +51,13 @@
       return 0;
     }
 
-    if (score.kind === 'mate') {
-      return score.value > 0 ? 10000 - Math.min(score.value, 99) * 100 : -10000 + Math.min(Math.abs(score.value), 99) * 100;
+    const s = decodeLegacyMate(score);
+
+    if (s.kind === 'mate') {
+      return s.value >= 0 ? 10000 - Math.min(s.value, 99) * 100 : -10000 + Math.min(Math.abs(s.value), 99) * 100;
     }
 
-    return score.value;
+    return s.value;
   }
 
   function evalToNumberForPerspective(score, perspectiveColor, moverColor) {
@@ -84,7 +83,7 @@
             squares.push('');
           }
         } else {
-          squares.push(unicodeMap[token] ?? '');
+          squares.push(token);
         }
       }
     }

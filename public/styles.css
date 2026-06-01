@@ -296,7 +296,6 @@ button {
   grid-template-rows: repeat(8, var(--cell-size));
   width: var(--board-size);
   height: var(--board-size);
-  font-size: calc(var(--cell-size) * 0.72);
   border: 1px solid #4b5563;
   flex: 0 0 auto;
   position: relative;
@@ -318,7 +317,6 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1em;
   transition: box-shadow 0.2s ease;
 }
 
@@ -346,9 +344,16 @@ button {
   box-shadow: inset 0 0 0 3px #4d7c0f, inset 0 0 0 999px rgba(77, 124, 15, 0.28);
 }
 
+.piece-img {
+  width: 90%;
+  height: 90%;
+  pointer-events: none;
+  display: block;
+}
+
 .coord-label {
   position: absolute;
-  font-size: 0.2em;
+  font-size: 10px;
   line-height: 1;
   font-weight: 600;
   opacity: 0.85;
@@ -514,6 +519,7 @@ button {
   background: #111827;
   border-radius: 8px;
   border: 1px solid #4b5563;
+  cursor: pointer;
 }
 
 .details-panel > div {

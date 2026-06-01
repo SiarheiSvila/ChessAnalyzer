@@ -716,7 +716,15 @@
         square.classList.add('move-best-to');
       }
 
-      square.textContent = squares[sourceIndex] || '';
+      const piece = squares[sourceIndex];
+      if (piece) {
+        const color = piece === piece.toUpperCase() ? 'w' : 'b';
+        const img = document.createElement('img');
+        img.src = `https://lichess1.org/assets/piece/merida/${color}${piece.toUpperCase()}.svg`;
+        img.alt = piece;
+        img.className = 'piece-img';
+        square.appendChild(img);
+      }
 
       if (col === 0) {
         const rankLabel = document.createElement('span');
@@ -771,33 +779,56 @@
     elements.board.appendChild(arrowOverlay);
   }
 
+  const KEY_MOVE_COLORS = {
+    blunder: '#ef4444',
+    excellent: '#22c55e',
+  };
+
   function renderChart(moves, selectedIndex) {
     const width = 600;
     const height = 180;
     const maxAbs = 1000;
-    const points = moves.map((move, index) => {
+
+    const coords = moves.map((move, index) => {
       const x = moves.length === 1 ? width / 2 : (index / (moves.length - 1)) * width;
       const rawY = window.UiHelpers.evalToNumberForPerspective(move.evalAfter, state.viewerColor, move.color);
       const bounded = Math.max(-maxAbs, Math.min(maxAbs, rawY));
       const y = ((maxAbs - bounded) / (2 * maxAbs)) * height;
-      return `${x},${y}`;
+      return { x, y };
     });
 
-    const selectedMove = moves[selectedIndex];
-    const selectedX = moves.length === 1 ? width / 2 : (selectedIndex / (moves.length - 1)) * width;
-    const selectedYRaw = window.UiHelpers.evalToNumberForPerspective(
-      selectedMove.evalAfter,
-      state.viewerColor,
-      selectedMove.color,
-    );
-    const selectedYBounded = Math.max(-maxAbs, Math.min(maxAbs, selectedYRaw));
-    const selectedY = ((maxAbs - selectedYBounded) / (2 * maxAbs)) * height;
+    const selectedX = coords[selectedIndex].x;
+    const selectedY = coords[selectedIndex].y;
+
+    const keyDots = moves.map((move, index) => {
+      const label = (move.label || '').trim().toLowerCase();
+      const color = KEY_MOVE_COLORS[label];
+      if (!color) return '';
+      const { x, y } = coords[index];
+      return `<circle cx="${x}" cy="${y}" r="4" fill="${color}" data-index="${index}" class="chart-dot" style="cursor:pointer"></circle>`;
+    }).join('');
 
     elements.evalChart.innerHTML = `
       <line x1="0" y1="90" x2="600" y2="90" stroke="#6b7280" stroke-width="1"></line>
-      <polyline fill="none" stroke="#22c55e" stroke-width="2" points="${points.join(' ')}"></polyline>
-      <circle cx="${selectedX}" cy="${selectedY}" r="4" fill="#f59e0b"></circle>
+      <polyline fill="none" stroke="#22c55e" stroke-width="2" points="${coords.map(c => `${c.x},${c.y}`).join(' ')}"></polyline>
+      ${keyDots}
+      <circle cx="${selectedX}" cy="${selectedY}" r="5" fill="#f59e0b" stroke="#fff" stroke-width="1.5"></circle>
     `;
+  }
+
+  function initChartNavigation() {
+    elements.evalChart.addEventListener('click', (e) => {
+      const moves = state.analysis?.moves;
+      if (!moves?.length) return;
+
+      const dot = e.target.closest('.chart-dot');
+      const index = dot
+        ? Number(dot.dataset.index)
+        : Math.round(((e.clientX - elements.evalChart.getBoundingClientRect().left) / elements.evalChart.getBoundingClientRect().width) * (moves.length - 1));
+
+      state.selectedIndex = Math.max(0, Math.min(moves.length - 1, index));
+      renderStep();
+    });
   }
 
   function updateEvalBar(move) {
@@ -1226,6 +1257,8 @@
   });
 
   document.addEventListener('keydown', handleKeyboardNavigation);
+
+  initChartNavigation();
 
   const jobIdFromPath = getJobIdFromPath();
   if (jobIdFromPath) {

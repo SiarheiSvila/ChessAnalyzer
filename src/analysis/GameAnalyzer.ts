@@ -9,6 +9,7 @@ import {
   calculateCpl,
   classifyMove,
   moverPerspectiveAfterMove,
+  scoreToCp,
   summarizeBySide,
 } from './Scoring';
 import type { AnalyzedMove, RawAnalysisResult } from './dto/AnalysisResult';
@@ -140,13 +141,14 @@ export class GameAnalyzer {
           kind: evalBeforeScore.kind,
           value: -evalBeforeScore.value,
         };
-    const evalAfterForMover = {
-      kind: 'cp' as const,
-      value: moverPerspectiveAfterMove(evalAfter.info.score ?? { kind: 'cp', value: 0 }),
+    const evalAfterScore: UciScore = evalAfter.info.score ?? { kind: 'cp', value: 0 };
+    const evalAfterForMover: UciScore = {
+      kind: evalAfterScore.kind,
+      value: -evalAfterScore.value,
     };
     const bestAfterForMoverCp = moverPerspectiveAfterMove(evalBestAfter.info.score ?? { kind: 'cp', value: 0 });
 
-    const cpl = calculateCpl(bestAfterForMoverCp, evalAfterForMover.value);
+    const cpl = calculateCpl(bestAfterForMoverCp, scoreToCp(evalAfterForMover));
     const label = classifyMove(cpl);
     const critical = detectCriticalMoment({
       evalBeforeForMover,
