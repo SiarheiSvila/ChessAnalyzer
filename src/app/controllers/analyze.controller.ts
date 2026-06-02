@@ -19,6 +19,14 @@ interface AnalyzeRequestBody {
   synchronous?: unknown;
 }
 
+// Exponential fit anchored at 77% = 1250, 83% = 1400
+const ELO_A = 291.93;
+const ELO_B = 0.018888;
+
+function accuracyToEstimatedElo(accuracy: number): number {
+  return Math.max(100, Math.round(ELO_A * Math.exp(ELO_B * accuracy)));
+}
+
 interface AdminGameListItem {
   jobId: string;
   myName: string;
@@ -31,6 +39,10 @@ interface AdminGameListItem {
   moves: number;
   date: string;
   sortDate: string;
+  myAccuracy: number | null;
+  opponentAccuracy: number | null;
+  myEstimatedElo: number | null;
+  opponentEstimatedElo: number | null;
 }
 
 interface AnalysisViewerPreference {
@@ -471,6 +483,20 @@ export class AnalyzeController {
           moves: Math.ceil(record.result.moves.length / 2),
           date: headers.Date ?? sortDate.slice(0, 10),
           sortDate,
+          myAccuracy: myColor === 'white'
+            ? (record.result.summary?.accuracyWhite ?? null)
+            : (record.result.summary?.accuracyBlack ?? null),
+          opponentAccuracy: myColor === 'white'
+            ? (record.result.summary?.accuracyBlack ?? null)
+            : (record.result.summary?.accuracyWhite ?? null),
+          myEstimatedElo: (() => {
+            const acc = myColor === 'white' ? record.result.summary?.accuracyWhite : record.result.summary?.accuracyBlack;
+            return acc != null ? accuracyToEstimatedElo(acc) : null;
+          })(),
+          opponentEstimatedElo: (() => {
+            const acc = myColor === 'white' ? record.result.summary?.accuracyBlack : record.result.summary?.accuracyWhite;
+            return acc != null ? accuracyToEstimatedElo(acc) : null;
+          })(),
         };
       });
 

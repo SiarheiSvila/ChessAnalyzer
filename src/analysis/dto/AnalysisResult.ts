@@ -15,10 +15,13 @@ export interface RawMoveAnalysis {
   pv: string[];
 }
 
+export type GamePhase = 'opening' | 'middlegame' | 'endgame';
+
 export interface AnalyzedMove extends RawMoveAnalysis {
   evalBestAfter: UciScore;
   cpl: number;
   label: MoveLabel;
+  gamePhase: GamePhase;
   isCritical: boolean;
   criticalReasons: string[];
   evalSwingCp: number;
@@ -67,5 +70,9 @@ export interface RawAnalysisResult {
       };
     };
     criticalMoments: number;
+    phases: {
+      white: { opening: number; middlegame: number; endgame: number };
+      black: { opening: number; middlegame: number; endgame: number };
+    };
   };
 }

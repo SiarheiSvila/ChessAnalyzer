@@ -33,6 +33,7 @@ describe('CoachingClassifier reason classification', () => {
       evalBestAfter,
       cpl,
       label: 'Best',
+      gamePhase: 'opening',
       isCritical: false,
       criticalReasons: [],
       evalSwingCp: 0,

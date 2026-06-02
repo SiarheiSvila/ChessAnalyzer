@@ -3,9 +3,9 @@
   font-family: Inter, Segoe UI, sans-serif;
   --app-gap: 10px;
   --panel-pad: 10px;
-  --cell-size: 64px;
-  --eval-bar-width: 20px;
-  --board-cluster-gap: 8px;
+  --cell-size: 90px;
+  --eval-bar-width: 28px;
+  --board-cluster-gap: 10px;
   --board-size: calc(var(--cell-size) * 8);
   --board-cluster-size: calc(var(--board-size) + var(--eval-bar-width) + var(--board-cluster-gap));
 }
@@ -25,7 +25,7 @@ body {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(540px, 1fr) minmax(300px, 390px);
+  grid-template-columns: minmax(260px, 320px) minmax(780px, 1fr) minmax(300px, 390px);
   gap: var(--app-gap);
   min-height: calc(100vh - 20px);
 }
@@ -148,6 +148,93 @@ body {
 
 .chart-panel {
   flex: 0 0 auto;
+}
+
+.accuracy-panel {
+  flex: 0 0 auto;
+}
+
+.accuracy-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.accuracy-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.accuracy-row-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.accuracy-player-name {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.accuracy-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid #64748b;
+  flex-shrink: 0;
+}
+
+.accuracy-color-dot.white {
+  background: #f8fafc;
+}
+
+.accuracy-color-dot.black {
+  background: #0f172a;
+}
+
+.accuracy-score {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.accuracy-bar-wrap {
+  height: 5px;
+  background: #374151;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.accuracy-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.accuracy-elo {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.accuracy-elo-range {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.accuracy-elo-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 2px;
 }
 
 .moves-panel {
@@ -663,8 +750,12 @@ button {
     order: 3;
   }
 
-  .moves-panel {
+  .accuracy-panel {
     order: 4;
+  }
+
+  .moves-panel {
+    order: 5;
   }
 
   .input-panel {

@@ -8,11 +8,12 @@ import { PositionEvaluator } from './PositionEvaluator';
 import {
   calculateCpl,
   classifyMove,
+  cplToAccuracy,
   moverPerspectiveAfterMove,
   scoreToCp,
   summarizeBySide,
 } from './Scoring';
-import type { AnalyzedMove, RawAnalysisResult } from './dto/AnalysisResult';
+import type { AnalyzedMove, GamePhase, RawAnalysisResult } from './dto/AnalysisResult';
 import type { UciScore } from '../engine/uci/UciTypes';
 
 export interface AnalyzeGameOptions {
@@ -84,6 +85,7 @@ export class GameAnalyzer {
     const summaryBySide = summarizeBySide(moves);
     const criticalMoments = moves.filter((move) => move.isCritical).length;
     const cache = this.positionEvaluator.getCacheStats();
+    const phases = this.summarizePhaseAccuracy(moves);
 
     return {
       game: {
@@ -108,6 +110,7 @@ export class GameAnalyzer {
           black: summaryBySide.black.counts,
         },
         criticalMoments,
+        phases,
       },
     };
   }
@@ -172,6 +175,7 @@ export class GameAnalyzer {
       },
       cpl,
       label,
+      gamePhase: this.detectGamePhase(ply.fenBefore, ply.ply),
       isCritical: critical.isCritical,
       criticalReasons: critical.reasons,
       evalSwingCp: critical.evalSwingCp,
@@ -217,6 +221,58 @@ export class GameAnalyzer {
       result.push(plies[i].uciMove);
     }
     return result;
+  }
+
+  private summarizePhaseAccuracy(moves: AnalyzedMove[]): {
+    white: { opening: number; middlegame: number; endgame: number };
+    black: { opening: number; middlegame: number; endgame: number };
+  } {
+    const acc = (color: 'w' | 'b', phase: GamePhase): number => {
+      const subset = moves.filter((m) => m.color === color && m.gamePhase === phase);
+      if (subset.length === 0) return 0;
+      const sum = subset.reduce((s, m) => s + cplToAccuracy(m.cpl), 0);
+      return Math.round((sum / subset.length) * 10) / 10;
+    };
+
+    return {
+      white: {
+        opening: acc('w', 'opening'),
+        middlegame: acc('w', 'middlegame'),
+        endgame: acc('w', 'endgame'),
+      },
+      black: {
+        opening: acc('b', 'opening'),
+        middlegame: acc('b', 'middlegame'),
+        endgame: acc('b', 'endgame'),
+      },
+    };
+  }
+
+  private detectGamePhase(fenBefore: string, ply: number): GamePhase {
+    // Opening: first 20 half-moves (10 full moves per side)
+    if (ply <= 20) {
+      return 'opening';
+    }
+
+    // Count non-pawn, non-king material from FEN board section
+    const boardSection = fenBefore.split(' ')[0];
+    // Q=9, R=5, B=3, N=3 — total starting major/minor material per side = 39 (excl. king)
+    // Endgame threshold: total across both sides ≤ 14 points (roughly rook + minor piece each)
+    let material = 0;
+    for (const ch of boardSection) {
+      switch (ch) {
+        case 'Q': case 'q': material += 9; break;
+        case 'R': case 'r': material += 5; break;
+        case 'B': case 'b': material += 3; break;
+        case 'N': case 'n': material += 3; break;
+      }
+    }
+
+    if (material <= 14) {
+      return 'endgame';
+    }
+
+    return 'middlegame';
   }
 
   private applyUciMove(fen: string, uciMove: string): string {

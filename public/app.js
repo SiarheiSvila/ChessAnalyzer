@@ -575,6 +575,94 @@
     return parts.join(' ').trim();
   }
 
+  // Exponential fit anchored at 77% = 1250 Elo, 83% = 1400 Elo
+  const ELO_A = 291.93;
+  const ELO_B = 0.018888;
+
+  function accuracyToElo(accuracy) {
+    return Math.max(100, Math.round(ELO_A * Math.exp(ELO_B * accuracy)));
+  }
+
+  function accuracyBarColor(accuracy) {
+    if (accuracy >= 90) return '#22c55e';
+    if (accuracy >= 75) return '#84cc16';
+    if (accuracy >= 60) return '#f59e0b';
+    return '#ef4444';
+  }
+
+  function renderAccuracyPanel(result) {
+    const panel = document.getElementById('accuracyPanel');
+    const container = document.getElementById('accuracyRows');
+    if (!panel || !container) return;
+
+    const white = result.summary?.accuracyWhite;
+    const black = result.summary?.accuracyBlack;
+    if (white == null && black == null) {
+      panel.hidden = true;
+      return;
+    }
+
+    const playerInfo = resolvePlayerInfo(result);
+    const entries = [
+      { name: playerInfo.white, elo: playerInfo.whiteElo, accuracy: white, colorKey: 'white' },
+      { name: playerInfo.black, elo: playerInfo.blackElo, accuracy: black, colorKey: 'black' },
+    ];
+
+    container.innerHTML = '';
+    for (const entry of entries) {
+      if (entry.accuracy == null) continue;
+      const eloEstimate = accuracyToElo(entry.accuracy);
+      const barColor = accuracyBarColor(entry.accuracy);
+
+      const row = document.createElement('div');
+      row.className = 'accuracy-row';
+
+      const left = document.createElement('div');
+      left.className = 'accuracy-row-left';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'accuracy-player-name';
+      const dot = document.createElement('span');
+      dot.className = `accuracy-color-dot ${entry.colorKey}`;
+      const nameText = document.createTextNode(`${entry.name}${entry.elo ? ` (${entry.elo})` : ''}`);
+      nameEl.appendChild(dot);
+      nameEl.appendChild(nameText);
+
+      const scoreEl = document.createElement('div');
+      scoreEl.className = 'accuracy-score';
+      scoreEl.textContent = `${entry.accuracy.toFixed(1)}%`;
+
+      const barWrap = document.createElement('div');
+      barWrap.className = 'accuracy-bar-wrap';
+      const bar = document.createElement('div');
+      bar.className = 'accuracy-bar';
+      bar.style.width = `${entry.accuracy}%`;
+      bar.style.background = barColor;
+      barWrap.appendChild(bar);
+
+      left.appendChild(nameEl);
+      left.appendChild(scoreEl);
+      left.appendChild(barWrap);
+
+      const eloEl = document.createElement('div');
+      eloEl.className = 'accuracy-elo';
+      const rangeEl = document.createElement('div');
+      rangeEl.className = 'accuracy-elo-range';
+      rangeEl.textContent = `~${eloEstimate}`;
+      const labelEl = document.createElement('div');
+      labelEl.className = 'accuracy-elo-label';
+      labelEl.textContent = 'est. Elo';
+      eloEl.appendChild(rangeEl);
+      eloEl.appendChild(labelEl);
+
+      row.appendChild(left);
+      row.appendChild(eloEl);
+      container.appendChild(row);
+    }
+
+    panel.hidden = false;
+  }
+
   function applyAnalysisResult(result, viewer) {
     state.analysis = result;
     state.viewerColor = viewer?.playerColor === 'black'
@@ -586,6 +674,7 @@
     state.boardFlipped = viewer?.boardFlipped === true;
     deactivateCoachingVisualization();
     renderBoardPlayers(result);
+    renderAccuracyPanel(result);
 
     if (typeof result.pgn === 'string' && result.pgn.trim().length > 0) {
       elements.pgnInput.value = result.pgn;

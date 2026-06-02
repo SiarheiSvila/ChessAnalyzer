@@ -8,7 +8,19 @@
       "Bash(python3 -c \"import json,sys; moves=json.load\\(sys.stdin\\)['moves']; [print\\(i, m.get\\('evalAfter'\\)\\) for i,m in enumerate\\(moves\\) if m.get\\('evalAfter',{}\\).get\\('kind'\\)=='mate']\")",
       "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); moves=data['moves']; [print\\(i, m.get\\('evalAfter'\\)\\) for i,m in enumerate\\(moves[-10:]\\)]\")",
       "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(list\\(data.keys\\(\\)\\)\\)\")",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(npm test *)",
+      "Bash(node -e ' *)",
+      "Bash(node --input-type=module)",
+      "Bash(npx tsx -e ' *)",
+      "Bash(npx tsx *)",
+      "Bash(python3)",
+      "WebFetch(domain:www.chess.com)",
+      "WebFetch(domain:support.chess.com)",
+      "WebFetch(domain:www.reddit.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:chessify.me)",
+      "WebFetch(domain:www.chessprogramming.org)"
     ]
   }
 }

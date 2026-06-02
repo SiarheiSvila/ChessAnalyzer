@@ -39,7 +39,7 @@ body {
 .table-head,
 .table-row {
   display: grid;
-  grid-template-columns: 2.4fr 0.9fr 0.7fr 1fr 0.8fr;
+  grid-template-columns: 2.4fr 0.9fr 0.7fr 1fr 1fr 0.8fr;
   gap: 10px;
   align-items: center;
   padding: 12px 14px;
@@ -141,6 +141,23 @@ body {
 .delete-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.accuracy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.9rem;
+}
+
+.accuracy-me {
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.accuracy-opp {
+  color: #94a3b8;
+  font-size: 0.82rem;
 }
 
 .empty {

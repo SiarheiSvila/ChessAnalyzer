@@ -1,4 +1,11 @@
 (function () {
+  const ELO_A = 291.93;
+  const ELO_B = 0.018888;
+
+  function accuracyToElo(accuracy) {
+    return Math.max(100, Math.round(ELO_A * Math.exp(ELO_B * accuracy)));
+  }
+
   const gamesList = document.getElementById('gamesList');
 
   function formatDate(dateText) {
@@ -51,6 +58,24 @@
     const moves = document.createElement('div');
     moves.textContent = String(game.moves ?? 0);
 
+    const accuracy = document.createElement('div');
+    accuracy.className = 'accuracy';
+    if (game.myAccuracy != null) {
+      const myLine = document.createElement('div');
+      myLine.className = 'accuracy-me';
+      myLine.textContent = `${game.myAccuracy.toFixed(1)}% → ${accuracyToElo(game.myAccuracy)} Elo`;
+      accuracy.appendChild(myLine);
+
+      if (game.opponentAccuracy != null) {
+        const opLine = document.createElement('div');
+        opLine.className = 'accuracy-opp';
+        opLine.textContent = `${game.opponentAccuracy.toFixed(1)}% → ${accuracyToElo(game.opponentAccuracy)} Elo`;
+        accuracy.appendChild(opLine);
+      }
+    } else {
+      accuracy.textContent = '—';
+    }
+
     const date = document.createElement('div');
     date.textContent = formatDate(game.date || game.sortDate);
 
@@ -99,6 +124,7 @@
     row.appendChild(players);
     row.appendChild(result);
     row.appendChild(moves);
+    row.appendChild(accuracy);
     row.appendChild(date);
     row.appendChild(actions);
 
