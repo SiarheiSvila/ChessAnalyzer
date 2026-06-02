@@ -61,7 +61,10 @@
 
       <div class="column center-column">
         <section class="panel board-panel">
-          <div class="board-player board-player-top" id="boardPlayerTop">-</div>
+          <div class="board-player board-player-top" id="boardPlayerTop">
+            <span class="player-name" id="boardPlayerTopName">-</span>
+            <span class="captured-pieces" id="boardPlayerTopCaptured"></span>
+          </div>
           <div class="board-container">
             <div class="eval-bar">
               <div id="evalBarFill" class="eval-bar-fill"></div>
@@ -72,7 +75,10 @@
             <div id="evalDisplay" class="eval-display">Eval: -</div>
             <button id="flipBoardBtn" class="flip-board-btn" type="button" aria-label="Flip board" title="Flip board">⇄</button>
           </div>
-          <div class="board-player board-player-bottom" id="boardPlayerBottom">-</div>
+          <div class="board-player board-player-bottom" id="boardPlayerBottom">
+            <span class="player-name" id="boardPlayerBottomName">-</span>
+            <span class="captured-pieces" id="boardPlayerBottomCaptured"></span>
+          </div>
           <div class="controls">
             <button id="firstBtn" class="nav-btn" disabled aria-label="First move">⏮</button>
             <button id="prevBtn" class="nav-btn" disabled aria-label="Previous move">◀</button>

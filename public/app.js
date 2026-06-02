@@ -1,6 +1,9 @@
 (function () {
   const EVAL_PERSPECTIVE = 'w';
   const COACHING_UI_MAX_MOVES = 16;
+  const PIECE_START_COUNTS = { P: 8, R: 2, N: 2, B: 2, Q: 1, K: 1 };
+  const PIECE_ORDER = ['Q', 'R', 'B', 'N', 'P'];
+  const MERIDA_BASE = 'https://lichess1.org/assets/piece/merida';
 
   const state = {
     analysis: null,
@@ -449,6 +452,57 @@
     renderStep();
   }
 
+  const PIECE_VALUES = { Q: 9, R: 5, B: 3, N: 3, P: 1 };
+
+  function getCapturedPieces(fen) {
+    const placement = fen.split(' ')[0];
+    const onBoard = { P: 0, R: 0, N: 0, B: 0, Q: 0, K: 0, p: 0, r: 0, n: 0, b: 0, q: 0, k: 0 };
+    for (const ch of placement) {
+      if (ch in onBoard) {
+        onBoard[ch] += 1;
+      }
+    }
+    const capturedByWhite = [];
+    const capturedByBlack = [];
+    let whiteScore = 0;
+    let blackScore = 0;
+    for (const p of PIECE_ORDER) {
+      const blackLost = PIECE_START_COUNTS[p] - onBoard[p.toLowerCase()];
+      const whiteLost = PIECE_START_COUNTS[p] - onBoard[p];
+      for (let i = 0; i < blackLost; i += 1) {
+        capturedByWhite.push(p.toLowerCase());
+        whiteScore += PIECE_VALUES[p];
+      }
+      for (let i = 0; i < whiteLost; i += 1) {
+        capturedByBlack.push(p);
+        blackScore += PIECE_VALUES[p];
+      }
+    }
+    const advantage = whiteScore - blackScore;
+    return {
+      capturedByWhite,
+      capturedByBlack,
+      whiteAdvantage: advantage > 0 ? advantage : 0,
+      blackAdvantage: advantage < 0 ? -advantage : 0,
+    };
+  }
+
+  function renderCapturedPiecesEl(el, pieces, advantage) {
+    el.innerHTML = '';
+    for (const p of pieces) {
+      const img = document.createElement('img');
+      img.src = `${MERIDA_BASE}/w${p.toUpperCase()}.svg`;
+      img.className = 'captured-piece-img';
+      el.appendChild(img);
+    }
+    if (advantage > 0) {
+      const span = document.createElement('span');
+      span.className = 'material-advantage';
+      span.textContent = `+${advantage}`;
+      el.appendChild(span);
+    }
+  }
+
   function resolvePlayerInfo(result) {
     const game = result?.game ?? {};
     const headers = game.headers ?? {};
@@ -464,20 +518,34 @@
     };
   }
 
-  function renderBoardPlayers(result) {
+  function renderBoardPlayers(result, fen) {
     if (!elements.boardPlayerTop || !elements.boardPlayerBottom) {
       return;
     }
 
     const playerInfo = resolvePlayerInfo(result);
-    if (state.boardFlipped) {
-      elements.boardPlayerTop.textContent = `${playerInfo.white} (${playerInfo.whiteElo})`;
-      elements.boardPlayerBottom.textContent = `${playerInfo.black} (${playerInfo.blackElo})`;
-      return;
-    }
+    const topNameEl = document.getElementById('boardPlayerTopName');
+    const bottomNameEl = document.getElementById('boardPlayerBottomName');
+    const topCapturedEl = document.getElementById('boardPlayerTopCaptured');
+    const bottomCapturedEl = document.getElementById('boardPlayerBottomCaptured');
 
-    elements.boardPlayerTop.textContent = `${playerInfo.black} (${playerInfo.blackElo})`;
-    elements.boardPlayerBottom.textContent = `${playerInfo.white} (${playerInfo.whiteElo})`;
+    const topIsWhite = state.boardFlipped;
+    const topName = topIsWhite ? `${playerInfo.white} (${playerInfo.whiteElo})` : `${playerInfo.black} (${playerInfo.blackElo})`;
+    const bottomName = topIsWhite ? `${playerInfo.black} (${playerInfo.blackElo})` : `${playerInfo.white} (${playerInfo.whiteElo})`;
+
+    if (topNameEl) topNameEl.textContent = topName;
+    if (bottomNameEl) bottomNameEl.textContent = bottomName;
+
+    if (fen && topCapturedEl && bottomCapturedEl) {
+      const { capturedByWhite, capturedByBlack, whiteAdvantage, blackAdvantage } = getCapturedPieces(fen);
+      if (topIsWhite) {
+        renderCapturedPiecesEl(topCapturedEl, capturedByWhite, whiteAdvantage);
+        renderCapturedPiecesEl(bottomCapturedEl, capturedByBlack, blackAdvantage);
+      } else {
+        renderCapturedPiecesEl(topCapturedEl, capturedByBlack, blackAdvantage);
+        renderCapturedPiecesEl(bottomCapturedEl, capturedByWhite, whiteAdvantage);
+      }
+    }
   }
 
   function getJobIdFromPath() {
@@ -779,11 +847,6 @@
     elements.board.appendChild(arrowOverlay);
   }
 
-  const KEY_MOVE_COLORS = {
-    blunder: '#ef4444',
-    excellent: '#22c55e',
-  };
-
   function renderChart(moves, selectedIndex) {
     const width = 600;
     const height = 180;
@@ -800,18 +863,9 @@
     const selectedX = coords[selectedIndex].x;
     const selectedY = coords[selectedIndex].y;
 
-    const keyDots = moves.map((move, index) => {
-      const label = (move.label || '').trim().toLowerCase();
-      const color = KEY_MOVE_COLORS[label];
-      if (!color) return '';
-      const { x, y } = coords[index];
-      return `<circle cx="${x}" cy="${y}" r="4" fill="${color}" data-index="${index}" class="chart-dot" style="cursor:pointer"></circle>`;
-    }).join('');
-
     elements.evalChart.innerHTML = `
       <line x1="0" y1="90" x2="600" y2="90" stroke="#6b7280" stroke-width="1"></line>
       <polyline fill="none" stroke="#22c55e" stroke-width="2" points="${coords.map(c => `${c.x},${c.y}`).join(' ')}"></polyline>
-      ${keyDots}
       <circle cx="${selectedX}" cy="${selectedY}" r="5" fill="#f59e0b" stroke="#fff" stroke-width="1.5"></circle>
     `;
   }
@@ -821,10 +875,8 @@
       const moves = state.analysis?.moves;
       if (!moves?.length) return;
 
-      const dot = e.target.closest('.chart-dot');
-      const index = dot
-        ? Number(dot.dataset.index)
-        : Math.round(((e.clientX - elements.evalChart.getBoundingClientRect().left) / elements.evalChart.getBoundingClientRect().width) * (moves.length - 1));
+      const rect = elements.evalChart.getBoundingClientRect();
+      const index = Math.round(((e.clientX - rect.left) / rect.width) * (moves.length - 1));
 
       state.selectedIndex = Math.max(0, Math.min(moves.length - 1, index));
       renderStep();
@@ -1058,6 +1110,7 @@
     elements.detailEvalAfter.textContent = `Eval After: ${view.details.evalAfter}`;
     updateCoachingPanel(move);
 
+    renderBoardPlayers(state.analysis, move.fenAfter);
     renderBoard(
       boardFen,
       landingSquare,

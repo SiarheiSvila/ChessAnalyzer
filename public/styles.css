@@ -85,10 +85,37 @@ body {
   color: #e5e7eb;
   font-size: 0.86rem;
   font-weight: 600;
-  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.player-name {
+  flex-shrink: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.captured-pieces {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1px;
+}
+
+.captured-piece-img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.material-advantage {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-left: 2px;
 }
 
 .eval-row {
